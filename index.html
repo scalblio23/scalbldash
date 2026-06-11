@@ -338,6 +338,28 @@
     transition: color 0.15s;
   }
   .logout-btn:hover { color: #f87171; }
+
+  /* ---- badge selects (client status page) ---- */
+  select.badge-select {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: center;
+  }
+  select.badge-select option { background: #111111; color: #e5e5e5; font-weight: normal; }
+  select.badge-select.ad-live    { background: #16a34a; color: #ffffff; }
+  select.badge-select.ad-notlive { background: #dc2626; color: #ffffff; }
+  select.badge-select.cs-active   { background: #16a34a; color: #ffffff; }
+  select.badge-select.cs-inactive { background: #dc2626; color: #ffffff; }
+  select.badge-select.cs-pif      { background: #ea580c; color: #ffffff; }
 </style>
 </head>
 <body>
@@ -356,6 +378,7 @@
     <div class="sidebar-brand">Scalbl</div>
     <nav>
       <div class="nav-item active" data-page="clients">Client List</div>
+      <div class="nav-item" data-page="client-status">Client Status</div>
       <div class="nav-item" data-page="settings">Settings</div>
     </nav>
     <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
@@ -408,6 +431,23 @@
         <tfoot id="mrr-footer"></tfoot>
       </table>
       <div class="save-indicator" id="save-indicator"></div>
+    </div>
+
+    <!-- Client Status page -->
+    <div class="page" id="page-client-status">
+      <div class="page-header">
+        <h1 class="page-title">Client Status</h1>
+      </div>
+      <table class="client-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Ad Status</th>
+            <th>Client Status</th>
+          </tr>
+        </thead>
+        <tbody id="client-status-rows"></tbody>
+      </table>
     </div>
 
     <!-- Settings page -->
@@ -568,12 +608,74 @@
     pages.forEach(p => p.classList.toggle('active', p.id === 'page-' + name));
     navItems.forEach(n => n.classList.toggle('active', n.dataset.page === name));
     if (name === 'settings') renderUserList();
+    if (name === 'client-status') renderClientStatus();
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
 
   // ---- render clients ----
   const rowsBody = document.getElementById('client-rows');
+
+  function applyAdStatusStyle(sel) {
+    sel.className = 'badge-select ' + (sel.value === 'Live' ? 'ad-live' : 'ad-notlive');
+  }
+
+  function applyClientStatusStyle(sel) {
+    const map = { Active: 'cs-active', Inactive: 'cs-inactive', PIF: 'cs-pif' };
+    sel.className = 'badge-select ' + (map[sel.value] || 'cs-active');
+  }
+
+  function renderClientStatus() {
+    const tbody = document.getElementById('client-status-rows');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (state.clients.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td class="empty-state" colspan="3">No clients yet — add them in Client List</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    state.clients.forEach((c, idx) => {
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td');
+      tdName.textContent = c.name || '—';
+      tdName.style.color = '#d5d5d5';
+      tr.appendChild(tdName);
+
+      // Ad Status
+      const tdAd = document.createElement('td');
+      const adSel = document.createElement('select');
+      adSel.innerHTML = '<option value="Live">Live</option><option value="Not Live">Not Live</option>';
+      adSel.value = c.adStatus || 'Not Live';
+      applyAdStatusStyle(adSel);
+      adSel.addEventListener('change', () => {
+        pushHistory();
+        state.clients[idx].adStatus = adSel.value;
+        applyAdStatusStyle(adSel);
+        saveState();
+      });
+      tdAd.appendChild(adSel);
+      tr.appendChild(tdAd);
+
+      // Client Status
+      const tdCs = document.createElement('td');
+      const csSel = document.createElement('select');
+      csSel.innerHTML = '<option value="Active">Active</option><option value="Inactive">Inactive</option><option value="PIF">PIF</option>';
+      csSel.value = c.clientStatus || 'Active';
+      applyClientStatusStyle(csSel);
+      csSel.addEventListener('change', () => {
+        pushHistory();
+        state.clients[idx].clientStatus = csSel.value;
+        applyClientStatusStyle(csSel);
+        saveState();
+      });
+      tdCs.appendChild(csSel);
+      tr.appendChild(tdCs);
+
+      tbody.appendChild(tr);
+    });
+  }
 
   function renderMRRFooter() {
     const footer = document.getElementById('mrr-footer');
@@ -681,6 +783,7 @@
     }
     renderStatusChips();
     renderMRRFooter();
+    renderClientStatus();
     fillStatusOptions(inStatus, inStatus.value || (state.statuses[0] && state.statuses[0].name));
   }
 
@@ -759,7 +862,9 @@
       name, email, phone,
       date: inDate.value,
       status: inStatus.value || (state.statuses[0] && state.statuses[0].name) || '',
-      mrr: parseFloat(inMRR.value) || 0
+      mrr: parseFloat(inMRR.value) || 0,
+      adStatus: 'Not Live',
+      clientStatus: 'Active'
     });
     inName.value = inEmail.value = inPhone.value = inMRR.value = '';
     saveState();
