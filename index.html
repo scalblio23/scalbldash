@@ -368,6 +368,7 @@
         <h1 class="page-title">Client List</h1>
         <div class="header-actions">
           <button class="btn subtle" id="undo-btn" disabled>↩ Undo</button>
+          <button class="btn subtle" id="redo-btn" disabled>↪ Redo</button>
           <button class="btn subtle" id="add-status-btn">+ Add Status</button>
           <button class="btn" id="add-client-btn">+ Add Client</button>
         </div>
@@ -487,20 +488,35 @@
 
   // ---- undo history ----
   const undoStack = [];
+  const redoStack = [];
   const MAX_HISTORY = 50;
 
   function pushHistory() {
     undoStack.push(JSON.stringify(state));
     if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    redoStack.length = 0;
     document.getElementById('undo-btn').disabled = false;
+    document.getElementById('redo-btn').disabled = true;
   }
 
   function undo() {
     if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(state));
     state = JSON.parse(undoStack.pop());
     saveState();
     render();
-    if (!undoStack.length) document.getElementById('undo-btn').disabled = true;
+    document.getElementById('undo-btn').disabled = !undoStack.length;
+    document.getElementById('redo-btn').disabled = false;
+  }
+
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(state));
+    state = JSON.parse(redoStack.pop());
+    saveState();
+    render();
+    document.getElementById('undo-btn').disabled = false;
+    document.getElementById('redo-btn').disabled = !redoStack.length;
   }
 
   // ---- helpers ----
@@ -779,11 +795,10 @@
 
   // ---- undo wiring ----
   document.getElementById('undo-btn').addEventListener('click', undo);
+  document.getElementById('redo-btn').addEventListener('click', redo);
   document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      undo();
-    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
   });
 
   // ---- settings: user management ----
