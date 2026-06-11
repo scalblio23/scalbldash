@@ -170,15 +170,101 @@
     margin-top: 14px;
     text-transform: uppercase;
   }
+
+  /* ---- login overlay ---- */
+  #login-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  #login-overlay.hidden { display: none; }
+  .login-box {
+    width: 320px;
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 10px;
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .login-brand {
+    font-size: 16px;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .login-box input {
+    width: 100%;
+    background: #0d0d0d;
+    border: 1px solid #222222;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+  }
+  .login-box input:focus { border-color: #444444; }
+  .login-btn {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .login-btn:hover { background: #242424; }
+  .login-error {
+    font-size: 11px;
+    color: #f87171;
+    letter-spacing: 1px;
+    min-height: 16px;
+    text-transform: uppercase;
+  }
+  .logout-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #444444;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 4px 0;
+    text-transform: uppercase;
+  }
+  .logout-btn:hover { color: #f87171; }
 </style>
 </head>
 <body>
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-brand">Scalbl</div>
+    <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-submit">Login</button>
+  </div>
+</div>
+
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-brand">Scalbl</div>
     <nav>
       <div class="nav-item active" data-page="clients">Client List</div>
     </nav>
+    <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
   </aside>
   <main class="main" id="main">
     <div class="page" id="page-clients">
@@ -459,10 +545,63 @@
   document.getElementById('status-save').addEventListener('click', saveStatus);
   statusName.addEventListener('keydown', e => { if (e.key === 'Enter') saveStatus(); });
 
+  // ---- auth ----
+  const CREDENTIALS = { username: 'admin', password: 'scalbl2024' };
+  const SESSION_KEY = 'scalbl-auth';
+
+  const loginOverlay  = document.getElementById('login-overlay');
+  const loginUsername = document.getElementById('login-username');
+  const loginPassword = document.getElementById('login-password');
+  const loginError    = document.getElementById('login-error');
+
+  function isLoggedIn() {
+    return sessionStorage.getItem(SESSION_KEY) === 'true';
+  }
+
+  function showDashboard() {
+    loginOverlay.classList.add('hidden');
+  }
+
+  function showLogin(msg) {
+    loginOverlay.classList.remove('hidden');
+    loginUsername.value = '';
+    loginPassword.value = '';
+    loginError.textContent = msg || '';
+    loginUsername.focus();
+  }
+
+  function attemptLogin() {
+    const u = loginUsername.value.trim();
+    const p = loginPassword.value;
+    if (u === CREDENTIALS.username && p === CREDENTIALS.password) {
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      showDashboard();
+    } else {
+      loginError.textContent = 'Invalid credentials';
+      loginPassword.value = '';
+      loginPassword.focus();
+    }
+  }
+
+  document.getElementById('login-submit').addEventListener('click', attemptLogin);
+  [loginUsername, loginPassword].forEach(el =>
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); })
+  );
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    showLogin();
+  });
+
   // ---- init ----
   (async () => {
     await loadState();
     render();
+    if (isLoggedIn()) {
+      showDashboard();
+    } else {
+      loginUsername.focus();
+    }
     if (!storageAvailable) setIndicator('Not persisted in this view');
   })();
 </script>
