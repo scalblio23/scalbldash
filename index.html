@@ -107,6 +107,17 @@
   .cell-input:hover { border-color: #2a2a2a; }
   .cell-input:focus { border-color: #444444; background: #0d0d0d; color: #ffffff; }
   .cell-input[type="date"] { color-scheme: dark; }
+  .cell-input[type="number"] { -moz-appearance: textfield; }
+  .cell-input[type="number"]::-webkit-inner-spin-button,
+  .cell-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  #mrr-footer td {
+    padding: 10px 14px;
+    border-top: 1px solid #2a2a2a;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  .mrr-total-label { color: #666666; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
+  .mrr-total-value { color: #ffffff; font-size: 14px; }
   .add-row td { padding: 8px 14px; border-bottom: 1px solid #1e1e1e; }
   .add-row input, .status-form input[type="text"] {
     width: 100%;
@@ -377,7 +388,8 @@
             <th>Email</th>
             <th>Phone Number</th>
             <th>Date</th>
-            <th>Select</th>
+            <th>Status</th>
+            <th>MRR</th>
             <th style="width:30px"></th>
           </tr>
         </thead>
@@ -388,10 +400,12 @@
             <td><input id="in-phone" placeholder="Phone Number"></td>
             <td><input id="in-date" type="date"></td>
             <td><select id="in-status" class="status-select"></select></td>
+            <td><input id="in-mrr" type="number" min="0" step="0.01" placeholder="0"></td>
             <td></td>
           </tr>
         </tbody>
         <tbody id="client-rows"></tbody>
+        <tfoot id="mrr-footer"></tfoot>
       </table>
       <div class="save-indicator" id="save-indicator"></div>
     </div>
@@ -546,11 +560,24 @@
   // ---- render clients ----
   const rowsBody = document.getElementById('client-rows');
 
+  function renderMRRFooter() {
+    const footer = document.getElementById('mrr-footer');
+    footer.innerHTML = '';
+    if (state.clients.length === 0) return;
+    const total = state.clients.reduce((sum, c) => sum + (parseFloat(c.mrr) || 0), 0);
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td colspan="5" class="mrr-total-label">Total MRR</td>' +
+      '<td class="mrr-total-value">$' + total.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>' +
+      '<td></td>';
+    footer.appendChild(tr);
+  }
+
   function render() {
     rowsBody.innerHTML = '';
     if (state.clients.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td class="empty-state" colspan="6">No clients yet</td>';
+      tr.innerHTML = '<td class="empty-state" colspan="7">No clients yet</td>';
       rowsBody.appendChild(tr);
     } else {
       state.clients.forEach((c, idx) => {
@@ -601,6 +628,27 @@
         tdStatus.appendChild(sel);
         tr.appendChild(tdStatus);
 
+        // editable MRR field
+        const tdMRR = document.createElement('td');
+        const mrrInp = document.createElement('input');
+        mrrInp.type = 'number';
+        mrrInp.min = '0';
+        mrrInp.step = '0.01';
+        mrrInp.className = 'cell-input';
+        mrrInp.value = c.mrr || '';
+        mrrInp.placeholder = '0';
+        mrrInp.addEventListener('blur', () => {
+          const val = parseFloat(mrrInp.value) || 0;
+          if (val === (parseFloat(c.mrr) || 0)) return;
+          pushHistory();
+          state.clients[idx].mrr = val;
+          saveState();
+          renderMRRFooter();
+        });
+        mrrInp.addEventListener('keydown', e => { if (e.key === 'Enter') mrrInp.blur(); });
+        tdMRR.appendChild(mrrInp);
+        tr.appendChild(tdMRR);
+
         const tdDel = document.createElement('td');
         tdDel.className = 'row-delete';
         tdDel.textContent = 'x';
@@ -617,6 +665,7 @@
       });
     }
     renderStatusChips();
+    renderMRRFooter();
     fillStatusOptions(inStatus, inStatus.value || (state.statuses[0] && state.statuses[0].name));
   }
 
@@ -661,6 +710,7 @@
   const inPhone  = document.getElementById('in-phone');
   const inDate   = document.getElementById('in-date');
   const inStatus = document.getElementById('in-status');
+  const inMRR    = document.getElementById('in-mrr');
 
   inStatus.addEventListener('change', () => styleStatusSelect(inStatus, inStatus.value));
 
@@ -693,9 +743,10 @@
     state.clients.push({
       name, email, phone,
       date: inDate.value,
-      status: inStatus.value || (state.statuses[0] && state.statuses[0].name) || ''
+      status: inStatus.value || (state.statuses[0] && state.statuses[0].name) || '',
+      mrr: parseFloat(inMRR.value) || 0
     });
-    inName.value = inEmail.value = inPhone.value = '';
+    inName.value = inEmail.value = inPhone.value = inMRR.value = '';
     saveState();
     render();
   }
