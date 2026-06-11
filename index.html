@@ -45,7 +45,8 @@
   .nav-item:hover { background: #141414; color: #ffffff; }
   .nav-item.active { background: #1a1a1a; color: #ffffff; }
   .main { flex: 1; overflow-y: auto; background: #000000; }
-  .page { padding: 28px 32px; }
+  .page { padding: 28px 32px; display: none; }
+  .page.active { display: block; }
   .page-header {
     display: flex;
     align-items: center;
@@ -171,6 +172,71 @@
     text-transform: uppercase;
   }
 
+  /* ---- settings page ---- */
+  .settings-section {
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    max-width: 560px;
+  }
+  .settings-section-title {
+    font-size: 11px;
+    color: #666666;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0 0 16px 0;
+  }
+  .user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #141414;
+    font-size: 13px;
+  }
+  .user-row:last-child { border-bottom: none; }
+  .user-email { color: #d5d5d5; }
+  .user-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #60a5fa;
+    border: 1px solid rgba(96,165,250,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    margin-left: 10px;
+  }
+  .settings-add-form {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .settings-add-form input {
+    background: #0d0d0d;
+    border: 1px solid #222222;
+    border-radius: 4px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    flex: 1;
+    min-width: 160px;
+  }
+  .settings-add-form input:focus { border-color: #444444; }
+  .settings-msg {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  .settings-msg.ok { color: #4ade80; }
+  .settings-msg.err { color: #f87171; }
+
   /* ---- login overlay ---- */
   #login-overlay {
     position: fixed;
@@ -233,7 +299,6 @@
     text-transform: uppercase;
   }
   .logout-btn {
-    margin-left: auto;
     background: none;
     border: none;
     color: #444444;
@@ -241,8 +306,11 @@
     font-size: 11px;
     letter-spacing: 1px;
     cursor: pointer;
-    padding: 4px 0;
+    padding: 8px 12px;
     text-transform: uppercase;
+    text-align: left;
+    border-radius: 6px;
+    transition: color 0.15s;
   }
   .logout-btn:hover { color: #f87171; }
 </style>
@@ -251,7 +319,7 @@
 <div id="login-overlay">
   <div class="login-box">
     <div class="login-brand">Scalbl</div>
-    <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+    <input type="email" id="login-email" placeholder="Email" autocomplete="email">
     <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
     <div class="login-error" id="login-error"></div>
     <button class="login-btn" id="login-submit">Login</button>
@@ -263,11 +331,14 @@
     <div class="sidebar-brand">Scalbl</div>
     <nav>
       <div class="nav-item active" data-page="clients">Client List</div>
+      <div class="nav-item" data-page="settings">Settings</div>
     </nav>
     <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
   </aside>
   <main class="main" id="main">
-    <div class="page" id="page-clients">
+
+    <!-- Client List page -->
+    <div class="page active" id="page-clients">
       <div class="page-header">
         <h1 class="page-title">Client List</h1>
         <div class="header-actions">
@@ -308,12 +379,51 @@
       </table>
       <div class="save-indicator" id="save-indicator"></div>
     </div>
+
+    <!-- Settings page -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <h1 class="page-title">Settings</h1>
+      </div>
+
+      <div class="settings-section">
+        <p class="settings-section-title">Users</p>
+        <div id="user-list"></div>
+        <div class="settings-add-form">
+          <input type="email" id="new-user-email" placeholder="Email">
+          <input type="password" id="new-user-password" placeholder="Password">
+          <button class="btn" id="add-user-btn">+ Add User</button>
+        </div>
+        <div class="settings-msg" id="settings-msg"></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
 <script>
-  const STORAGE_KEY = 'scalbl-dashboard-v1';
+  const STORAGE_KEY  = 'scalbl-dashboard-v1';
+  const USERS_KEY    = 'scalbl-users-v1';
+  const SESSION_KEY  = 'scalbl-auth';
 
+  // ---- users storage (localStorage) ----
+  const DEFAULT_USERS = [
+    { email: 'henryfortunatow@gmail.com', password: 'Bygodiam123!!', admin: true }
+  ];
+
+  function loadUsers() {
+    try {
+      const raw = localStorage.getItem(USERS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return DEFAULT_USERS.map(u => Object.assign({}, u));
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+
+  // ---- app state (localStorage) ----
   let state = {
     statuses: [
       { name: 'Pending', color: '#f5b73d' },
@@ -323,26 +433,19 @@
     clients: []
   };
 
-  let storageAvailable = !!(window.storage && window.storage.get);
-
-  async function loadState() {
-    if (!storageAvailable) return;
+  function loadState() {
     try {
-      const result = await window.storage.get(STORAGE_KEY);
-      if (result && result.value) {
-        const saved = JSON.parse(result.value);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
         if (saved.statuses && saved.clients) state = saved;
       }
-    } catch (e) { /* no saved data yet */ }
+    } catch (e) {}
   }
 
-  async function saveState() {
-    if (!storageAvailable) {
-      setIndicator('Not persisted in this view');
-      return;
-    }
+  function saveState() {
     try {
-      await window.storage.set(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       setIndicator('Saved');
     } catch (e) {
       setIndicator('Save failed');
@@ -394,7 +497,19 @@
     return parts[2] + '/' + parts[1] + '/' + parts[0];
   }
 
-  // ---- render ----
+  // ---- nav ----
+  const pages = document.querySelectorAll('.page');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  function showPage(name) {
+    pages.forEach(p => p.classList.toggle('active', p.id === 'page-' + name));
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.page === name));
+    if (name === 'settings') renderUserList();
+  }
+
+  navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
+
+  // ---- render clients ----
   const rowsBody = document.getElementById('client-rows');
 
   function render() {
@@ -476,10 +591,10 @@
   // ---- add client ----
   const addBtn = document.getElementById('add-client-btn');
   const addRow = document.getElementById('add-row');
-  const inName = document.getElementById('in-name');
-  const inEmail = document.getElementById('in-email');
-  const inPhone = document.getElementById('in-phone');
-  const inDate = document.getElementById('in-date');
+  const inName   = document.getElementById('in-name');
+  const inEmail  = document.getElementById('in-email');
+  const inPhone  = document.getElementById('in-phone');
+  const inDate   = document.getElementById('in-date');
   const inStatus = document.getElementById('in-status');
 
   inStatus.addEventListener('change', () => styleStatusSelect(inStatus, inStatus.value));
@@ -505,7 +620,7 @@
   }));
 
   function saveClient() {
-    const name = inName.value.trim();
+    const name  = inName.value.trim();
     const email = inEmail.value.trim();
     const phone = inPhone.value.trim();
     if (!name && !email && !phone) return;
@@ -520,8 +635,8 @@
   }
 
   // ---- add status ----
-  const statusForm = document.getElementById('status-form');
-  const statusName = document.getElementById('status-name');
+  const statusForm  = document.getElementById('status-form');
+  const statusName  = document.getElementById('status-name');
   const statusColor = document.getElementById('status-color');
 
   document.getElementById('add-status-btn').addEventListener('click', () => {
@@ -545,12 +660,68 @@
   document.getElementById('status-save').addEventListener('click', saveStatus);
   statusName.addEventListener('keydown', e => { if (e.key === 'Enter') saveStatus(); });
 
-  // ---- auth ----
-  const CREDENTIALS = { username: 'admin', password: 'scalbl2024' };
-  const SESSION_KEY = 'scalbl-auth';
+  // ---- settings: user management ----
+  function renderUserList() {
+    const users = loadUsers();
+    const list = document.getElementById('user-list');
+    list.innerHTML = '';
+    users.forEach((u, idx) => {
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      const left = document.createElement('span');
+      left.className = 'user-email';
+      left.textContent = u.email;
+      if (u.admin) {
+        const badge = document.createElement('span');
+        badge.className = 'user-badge';
+        badge.textContent = 'Admin';
+        left.appendChild(badge);
+      }
+      row.appendChild(left);
+      if (!u.admin) {
+        const del = document.createElement('span');
+        del.className = 'row-delete';
+        del.textContent = 'x';
+        del.title = 'Remove user';
+        del.addEventListener('click', () => {
+          const users2 = loadUsers();
+          users2.splice(idx, 1);
+          saveUsers(users2);
+          renderUserList();
+          showSettingsMsg('User removed', 'ok');
+        });
+        row.appendChild(del);
+      }
+      list.appendChild(row);
+    });
+  }
 
+  function showSettingsMsg(text, type) {
+    const el = document.getElementById('settings-msg');
+    el.textContent = text;
+    el.className = 'settings-msg ' + type;
+    setTimeout(() => { el.textContent = ''; el.className = 'settings-msg'; }, 3000);
+  }
+
+  document.getElementById('add-user-btn').addEventListener('click', () => {
+    const email = document.getElementById('new-user-email').value.trim();
+    const password = document.getElementById('new-user-password').value;
+    if (!email || !password) { showSettingsMsg('Email and password required', 'err'); return; }
+    const users = loadUsers();
+    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      showSettingsMsg('User already exists', 'err'); return;
+    }
+    users.push({ email, password, admin: false });
+    saveUsers(users);
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-password').value = '';
+    renderUserList();
+    showSettingsMsg('User added', 'ok');
+  });
+
+  // ---- auth ----
   const loginOverlay  = document.getElementById('login-overlay');
-  const loginUsername = document.getElementById('login-username');
+  const loginEmailEl  = document.getElementById('login-email');
   const loginPassword = document.getElementById('login-password');
   const loginError    = document.getElementById('login-error');
 
@@ -564,16 +735,18 @@
 
   function showLogin(msg) {
     loginOverlay.classList.remove('hidden');
-    loginUsername.value = '';
+    loginEmailEl.value = '';
     loginPassword.value = '';
     loginError.textContent = msg || '';
-    loginUsername.focus();
+    loginEmailEl.focus();
   }
 
   function attemptLogin() {
-    const u = loginUsername.value.trim();
-    const p = loginPassword.value;
-    if (u === CREDENTIALS.username && p === CREDENTIALS.password) {
+    const email = loginEmailEl.value.trim();
+    const pass  = loginPassword.value;
+    const users = loadUsers();
+    const match = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+    if (match) {
       sessionStorage.setItem(SESSION_KEY, 'true');
       showDashboard();
     } else {
@@ -584,7 +757,7 @@
   }
 
   document.getElementById('login-submit').addEventListener('click', attemptLogin);
-  [loginUsername, loginPassword].forEach(el =>
+  [loginEmailEl, loginPassword].forEach(el =>
     el.addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); })
   );
 
@@ -594,16 +767,13 @@
   });
 
   // ---- init ----
-  (async () => {
-    await loadState();
-    render();
-    if (isLoggedIn()) {
-      showDashboard();
-    } else {
-      loginUsername.focus();
-    }
-    if (!storageAvailable) setIndicator('Not persisted in this view');
-  })();
+  loadState();
+  render();
+  if (isLoggedIn()) {
+    showDashboard();
+  } else {
+    loginEmailEl.focus();
+  }
 </script>
 </body>
 </html>
