@@ -87,11 +87,26 @@
     border-bottom: 1px solid #1e1e1e;
   }
   .client-table td {
-    padding: 12px 14px;
+    padding: 4px 8px;
     color: #d5d5d5;
     border-bottom: 1px solid #141414;
   }
   .client-table tbody tr:hover { background: #0d0d0d; }
+  .cell-input {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #d5d5d5;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 6px;
+    outline: none;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .cell-input:hover { border-color: #2a2a2a; }
+  .cell-input:focus { border-color: #444444; background: #0d0d0d; color: #ffffff; }
+  .cell-input[type="date"] { color-scheme: dark; }
   .add-row td { padding: 8px 14px; border-bottom: 1px solid #1e1e1e; }
   .add-row input, .status-form input[type="text"] {
     width: 100%;
@@ -521,11 +536,35 @@
     } else {
       state.clients.forEach((c, idx) => {
         const tr = document.createElement('tr');
-        [c.name, c.email, c.phone, formatAU(c.date)].forEach(v => {
+
+        // editable text fields
+        [['name','text'], ['email','email'], ['phone','tel']].forEach(([field, type]) => {
           const td = document.createElement('td');
-          td.textContent = v;
+          const inp = document.createElement('input');
+          inp.type = type;
+          inp.className = 'cell-input';
+          inp.value = c[field];
+          inp.addEventListener('blur', () => {
+            state.clients[idx][field] = inp.value.trim();
+            saveState();
+          });
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+          td.appendChild(inp);
           tr.appendChild(td);
         });
+
+        // editable date field
+        const tdDate = document.createElement('td');
+        const dateInp = document.createElement('input');
+        dateInp.type = 'date';
+        dateInp.className = 'cell-input';
+        dateInp.value = c.date;
+        dateInp.addEventListener('change', () => {
+          state.clients[idx].date = dateInp.value;
+          saveState();
+        });
+        tdDate.appendChild(dateInp);
+        tr.appendChild(tdDate);
         const tdStatus = document.createElement('td');
         const sel = document.createElement('select');
         sel.className = 'status-select';
