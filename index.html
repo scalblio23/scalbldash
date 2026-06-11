@@ -357,6 +357,7 @@
       <div class="page-header">
         <h1 class="page-title">Client List</h1>
         <div class="header-actions">
+          <button class="btn subtle" id="undo-btn" disabled>↩ Undo</button>
           <button class="btn subtle" id="add-status-btn">+ Add Status</button>
           <button class="btn" id="add-client-btn">+ Add Client</button>
         </div>
@@ -471,6 +472,24 @@
     document.getElementById('save-indicator').textContent = text;
   }
 
+  // ---- undo history ----
+  const undoStack = [];
+  const MAX_HISTORY = 50;
+
+  function pushHistory() {
+    undoStack.push(JSON.stringify(state));
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    document.getElementById('undo-btn').disabled = false;
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    state = JSON.parse(undoStack.pop());
+    saveState();
+    render();
+    if (!undoStack.length) document.getElementById('undo-btn').disabled = true;
+  }
+
   // ---- helpers ----
   function hexToRgba(hex, alpha) {
     const v = hex.replace('#','');
@@ -545,7 +564,10 @@
           inp.className = 'cell-input';
           inp.value = c[field];
           inp.addEventListener('blur', () => {
-            state.clients[idx][field] = inp.value.trim();
+            const val = inp.value.trim();
+            if (val === c[field]) return;
+            pushHistory();
+            state.clients[idx][field] = val;
             saveState();
           });
           inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
@@ -560,6 +582,7 @@
         dateInp.className = 'cell-input';
         dateInp.value = c.date;
         dateInp.addEventListener('change', () => {
+          pushHistory();
           state.clients[idx].date = dateInp.value;
           saveState();
         });
@@ -570,6 +593,7 @@
         sel.className = 'status-select';
         fillStatusOptions(sel, c.status);
         sel.addEventListener('change', () => {
+          pushHistory();
           state.clients[idx].status = sel.value;
           styleStatusSelect(sel, sel.value);
           saveState();
@@ -582,6 +606,7 @@
         tdDel.textContent = 'x';
         tdDel.title = 'Delete row';
         tdDel.addEventListener('click', () => {
+          pushHistory();
           state.clients.splice(idx, 1);
           saveState();
           render();
@@ -614,6 +639,7 @@
           const ok = confirm('Status "' + s.name + '" is used by ' + usedBy + ' client(s). Delete it anyway? Those clients will be moved to the first remaining status.');
           if (!ok) return;
         }
+        pushHistory();
         state.statuses.splice(idx, 1);
         const fallback = state.statuses[0] ? state.statuses[0].name : '';
         state.clients.forEach(c => {
@@ -663,6 +689,7 @@
     const email = inEmail.value.trim();
     const phone = inPhone.value.trim();
     if (!name && !email && !phone) return;
+    pushHistory();
     state.clients.push({
       name, email, phone,
       date: inDate.value,
@@ -690,6 +717,7 @@
       alert('A status with that name already exists.');
       return;
     }
+    pushHistory();
     state.statuses.push({ name, color: statusColor.value });
     statusName.value = '';
     saveState();
@@ -698,6 +726,15 @@
 
   document.getElementById('status-save').addEventListener('click', saveStatus);
   statusName.addEventListener('keydown', e => { if (e.key === 'Enter') saveStatus(); });
+
+  // ---- undo wiring ----
+  document.getElementById('undo-btn').addEventListener('click', undo);
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    }
+  });
 
   // ---- settings: user management ----
   function renderUserList() {
