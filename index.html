@@ -926,9 +926,22 @@
           stTdStatus.appendChild(stStatusSel);
           str.appendChild(stTdStatus);
 
-          // Empty Client + Date Due cells
+          // Empty Client cell
           str.appendChild(document.createElement('td'));
-          str.appendChild(document.createElement('td'));
+
+          // Date Due
+          const stTdDate = document.createElement('td');
+          const stDateInp = document.createElement('input');
+          stDateInp.type = 'date';
+          stDateInp.className = 'cell-input';
+          stDateInp.value = st.dateDue || '';
+          stDateInp.addEventListener('change', () => {
+            pushHistory();
+            state.tasks[idx].subtasks[sidx].dateDue = stDateInp.value;
+            saveState();
+          });
+          stTdDate.appendChild(stDateInp);
+          str.appendChild(stTdDate);
 
           // Notes
           const stTdNotes = document.createElement('td');
@@ -977,7 +990,7 @@
         addStInp.addEventListener('keydown', e => {
           if (e.key === 'Enter' && addStInp.value.trim()) {
             pushHistory();
-            state.tasks[idx].subtasks.push({ task: addStInp.value.trim(), taskStatus: 'To Do', notes: '' });
+            state.tasks[idx].subtasks.push({ task: addStInp.value.trim(), taskStatus: 'To Do', dateDue: '', notes: '' });
             saveState();
             renderTasks();
           }
