@@ -363,6 +363,11 @@
   select.badge-select.ts-todo       { background: #1d4ed8; color: #ffffff; }
   select.badge-select.ts-inprogress { background: #f97316; color: #ffffff; }
   select.badge-select.ts-done       { background: #16a34a; color: #ffffff; }
+  .task-toggle { display: inline-block; cursor: pointer; color: #444444; font-size: 10px; margin-right: 8px; user-select: none; width: 10px; }
+  .task-toggle:hover { color: #aaaaaa; }
+  .subtask-row td { background: #060606; border-bottom: 1px solid #0f0f0f; }
+  .subtask-row:hover td { background: #0c0c0c; }
+  .subtask-indent { color: #2a2a2a; margin-right: 8px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -770,14 +775,28 @@
       tbody.appendChild(tr);
       return;
     }
+
     state.tasks.forEach((t, idx) => {
+      if (!t.subtasks) t.subtasks = [];
+
+      // --- Main task row ---
       const tr = document.createElement('tr');
 
-      // Task
+      // Task (with expand toggle)
       const tdTask = document.createElement('td');
+      const toggle = document.createElement('span');
+      toggle.className = 'task-toggle';
+      toggle.textContent = t.expanded ? '▼' : '▶';
+      toggle.addEventListener('click', () => {
+        state.tasks[idx].expanded = !state.tasks[idx].expanded;
+        saveState();
+        renderTasks();
+      });
+      tdTask.appendChild(toggle);
       const taskInp = document.createElement('input');
       taskInp.type = 'text';
       taskInp.className = 'cell-input';
+      taskInp.style.width = 'calc(100% - 22px)';
       taskInp.value = t.task || '';
       taskInp.addEventListener('blur', () => {
         const val = taskInp.value.trim();
@@ -862,8 +881,112 @@
         renderTasks();
       });
       tr.appendChild(tdDel);
-
       tbody.appendChild(tr);
+
+      // --- Subtask rows (shown when expanded) ---
+      if (t.expanded) {
+        t.subtasks.forEach((st, sidx) => {
+          const str = document.createElement('tr');
+          str.className = 'subtask-row';
+
+          // Indented task cell
+          const stTdTask = document.createElement('td');
+          const indent = document.createElement('span');
+          indent.className = 'subtask-indent';
+          indent.textContent = '↳';
+          stTdTask.appendChild(indent);
+          const stTaskInp = document.createElement('input');
+          stTaskInp.type = 'text';
+          stTaskInp.className = 'cell-input';
+          stTaskInp.style.width = 'calc(100% - 24px)';
+          stTaskInp.value = st.task || '';
+          stTaskInp.addEventListener('blur', () => {
+            const val = stTaskInp.value.trim();
+            if (val === st.task) return;
+            pushHistory();
+            state.tasks[idx].subtasks[sidx].task = val;
+            saveState();
+          });
+          stTaskInp.addEventListener('keydown', e => { if (e.key === 'Enter') stTaskInp.blur(); });
+          stTdTask.appendChild(stTaskInp);
+          str.appendChild(stTdTask);
+
+          // Status
+          const stTdStatus = document.createElement('td');
+          const stStatusSel = document.createElement('select');
+          stStatusSel.innerHTML = '<option value="To Do">To Do</option><option value="In Progress">In Progress</option><option value="Done">Done</option>';
+          stStatusSel.value = st.taskStatus || 'To Do';
+          applyTaskStatusStyle(stStatusSel);
+          stStatusSel.addEventListener('change', () => {
+            pushHistory();
+            state.tasks[idx].subtasks[sidx].taskStatus = stStatusSel.value;
+            applyTaskStatusStyle(stStatusSel);
+            saveState();
+          });
+          stTdStatus.appendChild(stStatusSel);
+          str.appendChild(stTdStatus);
+
+          // Empty Client + Date Due cells
+          str.appendChild(document.createElement('td'));
+          str.appendChild(document.createElement('td'));
+
+          // Notes
+          const stTdNotes = document.createElement('td');
+          const stNotesInp = document.createElement('input');
+          stNotesInp.type = 'text';
+          stNotesInp.className = 'cell-input';
+          stNotesInp.value = st.notes || '';
+          stNotesInp.placeholder = 'Add a note…';
+          stNotesInp.addEventListener('blur', () => {
+            const val = stNotesInp.value;
+            if (val === st.notes) return;
+            pushHistory();
+            state.tasks[idx].subtasks[sidx].notes = val;
+            saveState();
+          });
+          stNotesInp.addEventListener('keydown', e => { if (e.key === 'Enter') stNotesInp.blur(); });
+          stTdNotes.appendChild(stNotesInp);
+          str.appendChild(stTdNotes);
+
+          // Delete subtask
+          const stTdDel = document.createElement('td');
+          stTdDel.className = 'row-delete';
+          stTdDel.textContent = 'x';
+          stTdDel.title = 'Delete subtask';
+          stTdDel.addEventListener('click', () => {
+            pushHistory();
+            state.tasks[idx].subtasks.splice(sidx, 1);
+            saveState();
+            renderTasks();
+          });
+          str.appendChild(stTdDel);
+          tbody.appendChild(str);
+        });
+
+        // Add-subtask input row
+        const addStr = document.createElement('tr');
+        addStr.className = 'subtask-row';
+        const addStTd = document.createElement('td');
+        addStTd.colSpan = 5;
+        addStTd.style.paddingLeft = '28px';
+        const addStInp = document.createElement('input');
+        addStInp.type = 'text';
+        addStInp.className = 'cell-input';
+        addStInp.placeholder = '+ Add subtask…';
+        addStInp.style.color = '#555555';
+        addStInp.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && addStInp.value.trim()) {
+            pushHistory();
+            state.tasks[idx].subtasks.push({ task: addStInp.value.trim(), taskStatus: 'To Do', notes: '' });
+            saveState();
+            renderTasks();
+          }
+        });
+        addStTd.appendChild(addStInp);
+        addStr.appendChild(addStTd);
+        addStr.appendChild(document.createElement('td'));
+        tbody.appendChild(addStr);
+      }
     });
   }
 
@@ -1130,7 +1253,9 @@
       taskStatus: tStatus.value || 'To Do',
       client: tClient.value || '',
       dateDue: tDate.value,
-      notes: tNotes.value.trim()
+      notes: tNotes.value.trim(),
+      subtasks: [],
+      expanded: false
     });
     tTask.value = tNotes.value = '';
     tDate.value = '';
