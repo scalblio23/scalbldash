@@ -444,6 +444,7 @@
             <th>Name</th>
             <th>Ad Status</th>
             <th>Client Status</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody id="client-status-rows"></tbody>
@@ -631,7 +632,7 @@
     tbody.innerHTML = '';
     if (state.clients.length === 0) {
       const tr = document.createElement('tr');
-      tr.innerHTML = '<td class="empty-state" colspan="3">No clients yet — add them in Client List</td>';
+      tr.innerHTML = '<td class="empty-state" colspan="4">No clients yet — add them in Client List</td>';
       tbody.appendChild(tr);
       return;
     }
@@ -672,6 +673,21 @@
       });
       tdCs.appendChild(csSel);
       tr.appendChild(tdCs);
+
+      // Notes
+      const tdNotes = document.createElement('td');
+      const notesInput = document.createElement('input');
+      notesInput.type = 'text';
+      notesInput.value = c.notes || '';
+      notesInput.placeholder = 'Add a note…';
+      notesInput.style.cssText = 'background:transparent;border:none;border-bottom:1px solid #444;color:#d5d5d5;width:100%;padding:2px 4px;outline:none;font-size:0.85rem;';
+      notesInput.addEventListener('change', () => {
+        pushHistory();
+        state.clients[idx].notes = notesInput.value;
+        saveState();
+      });
+      tdNotes.appendChild(notesInput);
+      tr.appendChild(tdNotes);
 
       tbody.appendChild(tr);
     });
