@@ -360,6 +360,9 @@
   select.badge-select.cs-active   { background: #16a34a; color: #ffffff; }
   select.badge-select.cs-inactive { background: #dc2626; color: #ffffff; }
   select.badge-select.cs-pif      { background: #ea580c; color: #ffffff; }
+  select.badge-select.ts-todo       { background: #1d4ed8; color: #ffffff; }
+  select.badge-select.ts-inprogress { background: #f97316; color: #ffffff; }
+  select.badge-select.ts-done       { background: #16a34a; color: #ffffff; }
 </style>
 </head>
 <body>
@@ -379,6 +382,7 @@
     <nav>
       <div class="nav-item active" data-page="clients">Client List</div>
       <div class="nav-item" data-page="client-status">Client Status</div>
+      <div class="nav-item" data-page="task-list">Task List</div>
       <div class="nav-item" data-page="settings">Settings</div>
     </nav>
     <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
@@ -451,6 +455,43 @@
       </table>
     </div>
 
+    <!-- Task List page -->
+    <div class="page" id="page-task-list">
+      <div class="page-header">
+        <h1 class="page-title">Task List</h1>
+        <div class="header-actions">
+          <button class="btn" id="add-task-btn">+ Add Task</button>
+        </div>
+      </div>
+      <table class="client-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Client</th>
+            <th>Date Due</th>
+            <th>Notes</th>
+            <th style="width:30px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="add-row" id="task-add-row">
+            <td><input id="t-task" placeholder="Task"></td>
+            <td><select id="t-status" class="badge-select ts-todo">
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select></td>
+            <td><select id="t-client" style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:4px;color:#e5e5e5;font-family:inherit;font-size:13px;padding:8px 10px;outline:none;"></select></td>
+            <td><input id="t-date" type="date"></td>
+            <td><input id="t-notes" placeholder="Notes"></td>
+            <td></td>
+          </tr>
+        </tbody>
+        <tbody id="task-rows"></tbody>
+      </table>
+    </div>
+
     <!-- Settings page -->
     <div class="page" id="page-settings">
       <div class="page-header">
@@ -501,7 +542,8 @@
       { name: 'Closed',  color: '#4ade80' },
       { name: 'List',    color: '#60a5fa' }
     ],
-    clients: []
+    clients: [],
+    tasks: []
   };
 
   function loadState() {
@@ -509,7 +551,10 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw);
-        if (saved.statuses && saved.clients) state = saved;
+        if (saved.statuses && saved.clients) {
+          state = saved;
+          if (!state.tasks) state.tasks = [];
+        }
       }
     } catch (e) {}
   }
@@ -610,6 +655,7 @@
     navItems.forEach(n => n.classList.toggle('active', n.dataset.page === name));
     if (name === 'settings') renderUserList();
     if (name === 'client-status') renderClientStatus();
+    if (name === 'task-list') renderTasks();
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
@@ -688,6 +734,134 @@
       });
       tdNotes.appendChild(notesInput);
       tr.appendChild(tdNotes);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function applyTaskStatusStyle(sel) {
+    const map = { 'To Do': 'ts-todo', 'In Progress': 'ts-inprogress', 'Done': 'ts-done' };
+    sel.className = 'badge-select ' + (map[sel.value] || 'ts-todo');
+  }
+
+  function fillClientOptions(sel, selected) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— No Client —</option>';
+    state.clients.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.name;
+      o.textContent = c.name;
+      if (c.name === (selected !== undefined ? selected : prev)) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  function renderTasks() {
+    const tbody = document.getElementById('task-rows');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const tClientSel = document.getElementById('t-client');
+    if (tClientSel) fillClientOptions(tClientSel, tClientSel.value);
+
+    if (state.tasks.length === 0) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td class="empty-state" colspan="6">No tasks yet — click + Add Task</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    state.tasks.forEach((t, idx) => {
+      const tr = document.createElement('tr');
+
+      // Task
+      const tdTask = document.createElement('td');
+      const taskInp = document.createElement('input');
+      taskInp.type = 'text';
+      taskInp.className = 'cell-input';
+      taskInp.value = t.task || '';
+      taskInp.addEventListener('blur', () => {
+        const val = taskInp.value.trim();
+        if (val === t.task) return;
+        pushHistory();
+        state.tasks[idx].task = val;
+        saveState();
+      });
+      taskInp.addEventListener('keydown', e => { if (e.key === 'Enter') taskInp.blur(); });
+      tdTask.appendChild(taskInp);
+      tr.appendChild(tdTask);
+
+      // Status
+      const tdStatus = document.createElement('td');
+      const statusSel = document.createElement('select');
+      statusSel.innerHTML = '<option value="To Do">To Do</option><option value="In Progress">In Progress</option><option value="Done">Done</option>';
+      statusSel.value = t.taskStatus || 'To Do';
+      applyTaskStatusStyle(statusSel);
+      statusSel.addEventListener('change', () => {
+        pushHistory();
+        state.tasks[idx].taskStatus = statusSel.value;
+        applyTaskStatusStyle(statusSel);
+        saveState();
+      });
+      tdStatus.appendChild(statusSel);
+      tr.appendChild(tdStatus);
+
+      // Client
+      const tdClient = document.createElement('td');
+      const clientSel = document.createElement('select');
+      clientSel.style.cssText = 'width:100%;background:#111;border:1px solid #2a2a2a;border-radius:4px;color:#aaaaaa;font-family:inherit;font-size:12px;padding:5px 8px;outline:none;cursor:pointer;';
+      fillClientOptions(clientSel, t.client || '');
+      clientSel.addEventListener('change', () => {
+        pushHistory();
+        state.tasks[idx].client = clientSel.value;
+        saveState();
+      });
+      tdClient.appendChild(clientSel);
+      tr.appendChild(tdClient);
+
+      // Date Due
+      const tdDate = document.createElement('td');
+      const dateInp = document.createElement('input');
+      dateInp.type = 'date';
+      dateInp.className = 'cell-input';
+      dateInp.value = t.dateDue || '';
+      dateInp.addEventListener('change', () => {
+        pushHistory();
+        state.tasks[idx].dateDue = dateInp.value;
+        saveState();
+      });
+      tdDate.appendChild(dateInp);
+      tr.appendChild(tdDate);
+
+      // Notes
+      const tdNotes = document.createElement('td');
+      const notesInp = document.createElement('input');
+      notesInp.type = 'text';
+      notesInp.className = 'cell-input';
+      notesInp.value = t.notes || '';
+      notesInp.placeholder = 'Add a note…';
+      notesInp.addEventListener('blur', () => {
+        const val = notesInp.value;
+        if (val === t.notes) return;
+        pushHistory();
+        state.tasks[idx].notes = val;
+        saveState();
+      });
+      notesInp.addEventListener('keydown', e => { if (e.key === 'Enter') notesInp.blur(); });
+      tdNotes.appendChild(notesInp);
+      tr.appendChild(tdNotes);
+
+      // Delete
+      const tdDel = document.createElement('td');
+      tdDel.className = 'row-delete';
+      tdDel.textContent = 'x';
+      tdDel.title = 'Delete task';
+      tdDel.addEventListener('click', () => {
+        pushHistory();
+        state.tasks.splice(idx, 1);
+        saveState();
+        renderTasks();
+      });
+      tr.appendChild(tdDel);
 
       tbody.appendChild(tr);
     });
@@ -800,6 +974,7 @@
     renderStatusChips();
     renderMRRFooter();
     renderClientStatus();
+    renderTasks();
     fillStatusOptions(inStatus, inStatus.value || (state.statuses[0] && state.statuses[0].name));
   }
 
@@ -913,6 +1088,55 @@
 
   document.getElementById('status-save').addEventListener('click', saveStatus);
   statusName.addEventListener('keydown', e => { if (e.key === 'Enter') saveStatus(); });
+
+  // ---- add task ----
+  const addTaskBtn  = document.getElementById('add-task-btn');
+  const taskAddRow  = document.getElementById('task-add-row');
+  const tTask   = document.getElementById('t-task');
+  const tStatus = document.getElementById('t-status');
+  const tClient = document.getElementById('t-client');
+  const tDate   = document.getElementById('t-date');
+  const tNotes  = document.getElementById('t-notes');
+
+  tStatus.addEventListener('change', () => applyTaskStatusStyle(tStatus));
+
+  addTaskBtn.addEventListener('click', () => {
+    const opening = !taskAddRow.classList.contains('open');
+    taskAddRow.classList.toggle('open');
+    addTaskBtn.textContent = opening ? 'Save' : '+ Add Task';
+    if (opening) {
+      fillClientOptions(tClient, '');
+      tDate.value = todayISO();
+      tTask.focus();
+    } else {
+      saveTask();
+    }
+  });
+
+  [tTask, tNotes].forEach(inp => inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      saveTask();
+      taskAddRow.classList.remove('open');
+      addTaskBtn.textContent = '+ Add Task';
+    }
+  }));
+
+  function saveTask() {
+    const task = tTask.value.trim();
+    if (!task) return;
+    pushHistory();
+    state.tasks.push({
+      task,
+      taskStatus: tStatus.value || 'To Do',
+      client: tClient.value || '',
+      dateDue: tDate.value,
+      notes: tNotes.value.trim()
+    });
+    tTask.value = tNotes.value = '';
+    tDate.value = '';
+    saveState();
+    renderTasks();
+  }
 
   // ---- undo wiring ----
   document.getElementById('undo-btn').addEventListener('click', undo);
