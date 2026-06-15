@@ -2167,6 +2167,22 @@
 
   // ---- init ----
   loadState();
+
+  if (state.pipeline.length === 0) {
+    const seed = [
+      'Maurice Palazzolo','Leon Potter','Dylan Grubb','Mike Fernandez',
+      'Ali Ali','Haris Medzic','Jody Day','Kabindra shakya',
+      'Chay','Robert','Mlichael Wilson','Ayaz Mohammed',
+      'Frank Turcino','Saphira Thomsen Grant','Leah Gallin','Andrew Jax',
+      'Abhay','Jason Green','Rhaksha','Zad Hossain',
+      'John','Suleiman Ali'
+    ];
+    seed.forEach((name, i) => {
+      state.pipeline.push({ id: Date.now() + i, title: name, column: 'new', statuses: {} });
+    });
+    saveState();
+  }
+
   render();
   if (isLoggedIn()) {
     showDashboard();
