@@ -368,6 +368,116 @@
   .subtask-row td { background: #060606; border-bottom: 1px solid #0f0f0f; }
   .subtask-row:hover td { background: #0c0c0c; }
   .subtask-indent { color: #2a2a2a; margin-right: 8px; font-size: 13px; }
+
+  /* ---- pipeline board ---- */
+  .pipeline-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .pipeline-toolbar-title { font-size: 15px; font-weight: 600; color: #ffffff; }
+  .pipeline-toolbar-actions { display: flex; align-items: center; gap: 2px; }
+  .pipeline-icon-btn {
+    background: none;
+    border: none;
+    color: #555555;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 5px;
+    font-size: 15px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+  .pipeline-icon-btn:hover { background: #1a1a1a; color: #aaaaaa; }
+  .pipeline-new-btn-wrap { display: flex; align-items: center; margin-left: 8px; }
+  .pipeline-new-btn {
+    background: #2563eb;
+    border: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 6px 0 0 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .pipeline-new-btn:hover { background: #1d4ed8; }
+  .pipeline-new-btn-caret {
+    background: #2563eb;
+    border: none;
+    border-left: 1px solid rgba(255,255,255,0.2);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 7px 9px;
+    border-radius: 0 6px 6px 0;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .pipeline-new-btn-caret:hover { background: #1d4ed8; }
+  .pipeline-board { display: flex; gap: 14px; align-items: flex-start; }
+  .pipeline-col {
+    flex: 1;
+    min-width: 0;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .pipeline-col-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .pipeline-col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pipeline-col-name { font-size: 13px; font-weight: 500; color: #d5d5d5; }
+  .pipeline-col-count { font-size: 13px; color: #555555; margin-left: 2px; }
+  .pipeline-cards { display: flex; flex-direction: column; gap: 8px; min-height: 4px; }
+  .pipeline-card {
+    background: #141414;
+    border: 1px solid #222222;
+    border-radius: 7px;
+    padding: 12px 32px 12px 14px;
+    position: relative;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .pipeline-card:hover { background: #1a1a1a; border-color: #333333; }
+  .pipeline-card-title {
+    outline: none;
+    background: transparent;
+    border: none;
+    color: #d5d5d5;
+    font-family: inherit;
+    font-size: 13px;
+    width: 100%;
+    padding: 0;
+  }
+  .pipeline-card-del {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    color: #2a2a2a;
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    line-height: 1;
+  }
+  .pipeline-card:hover .pipeline-card-del { opacity: 1; }
+  .pipeline-card-del:hover { color: #f87171; }
+  .pipeline-new-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #444444;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 10px 4px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    margin-top: 4px;
+    user-select: none;
+  }
+  .pipeline-new-card:hover { color: #888888; background: #111111; }
 </style>
 </head>
 <body>
@@ -503,6 +613,23 @@
       <div class="page-header">
         <h1 class="page-title">Pipeline</h1>
       </div>
+      <div class="pipeline-toolbar">
+        <span class="pipeline-toolbar-title">Pipeline</span>
+        <div class="pipeline-toolbar-actions">
+          <button class="pipeline-icon-btn" title="Filter">&#8801;</button>
+          <button class="pipeline-icon-btn" title="Sort">&#8645;</button>
+          <button class="pipeline-icon-btn" title="Automate">&#9889;</button>
+          <button class="pipeline-icon-btn" title="AI">&#10022;</button>
+          <button class="pipeline-icon-btn" title="Search">&#9906;</button>
+          <button class="pipeline-icon-btn" title="Fullscreen">&#10548;</button>
+          <button class="pipeline-icon-btn" title="Settings">&#9881;</button>
+          <div class="pipeline-new-btn-wrap">
+            <button class="pipeline-new-btn" id="pipeline-new-btn">New</button>
+            <button class="pipeline-new-btn-caret" id="pipeline-new-caret">&#9662;</button>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-board" id="pipeline-board"></div>
     </div>
 
     <div class="page" id="page-settings">
@@ -555,7 +682,8 @@
       { name: 'List',    color: '#60a5fa' }
     ],
     clients: [],
-    tasks: []
+    tasks: [],
+    pipeline: []
   };
 
   function loadState() {
@@ -566,6 +694,7 @@
         if (saved.statuses && saved.clients) {
           state = saved;
           if (!state.tasks) state.tasks = [];
+          if (!state.pipeline) state.pipeline = [];
         }
       }
     } catch (e) {}
@@ -668,6 +797,7 @@
     if (name === 'settings') renderUserList();
     if (name === 'client-status') renderClientStatus();
     if (name === 'task-list') renderTasks();
+    if (name === 'pipeline') renderPipeline();
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
@@ -1290,6 +1420,99 @@
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
   });
+
+  // ---- pipeline board ----
+  const PIPELINE_COLS = [
+    { key: 'not-started', label: 'Not started', color: '#888888' },
+    { key: 'in-progress', label: 'In progress', color: '#60a5fa' },
+    { key: 'done',        label: 'Done',         color: '#4ade80' }
+  ];
+
+  function renderPipeline() {
+    const board = document.getElementById('pipeline-board');
+    if (!board) return;
+    board.innerHTML = '';
+    PIPELINE_COLS.forEach(col => {
+      const cards = state.pipeline.filter(c => c.column === col.key);
+      const colEl = document.createElement('div');
+      colEl.className = 'pipeline-col';
+
+      const header = document.createElement('div');
+      header.className = 'pipeline-col-header';
+      const dot = document.createElement('div');
+      dot.className = 'pipeline-col-dot';
+      dot.style.background = col.color;
+      const nameEl = document.createElement('span');
+      nameEl.className = 'pipeline-col-name';
+      nameEl.textContent = col.label;
+      const countEl = document.createElement('span');
+      countEl.className = 'pipeline-col-count';
+      countEl.textContent = cards.length;
+      header.appendChild(dot);
+      header.appendChild(nameEl);
+      header.appendChild(countEl);
+      colEl.appendChild(header);
+
+      const cardsEl = document.createElement('div');
+      cardsEl.className = 'pipeline-cards';
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'pipeline-card';
+        const titleInp = document.createElement('input');
+        titleInp.type = 'text';
+        titleInp.className = 'pipeline-card-title';
+        titleInp.value = card.title;
+        titleInp.addEventListener('blur', () => {
+          const val = titleInp.value.trim();
+          if (!val) { titleInp.value = card.title; return; }
+          if (val === card.title) return;
+          pushHistory();
+          const idx = state.pipeline.findIndex(c => c.id === card.id);
+          if (idx !== -1) state.pipeline[idx].title = val;
+          saveState();
+        });
+        titleInp.addEventListener('keydown', e => { if (e.key === 'Enter') titleInp.blur(); });
+        const delBtn = document.createElement('span');
+        delBtn.className = 'pipeline-card-del';
+        delBtn.textContent = '×';
+        delBtn.addEventListener('click', () => {
+          pushHistory();
+          state.pipeline = state.pipeline.filter(c => c.id !== card.id);
+          saveState();
+          renderPipeline();
+        });
+        cardEl.appendChild(titleInp);
+        cardEl.appendChild(delBtn);
+        cardsEl.appendChild(cardEl);
+      });
+      colEl.appendChild(cardsEl);
+
+      const newBtn = document.createElement('div');
+      newBtn.className = 'pipeline-new-card';
+      newBtn.innerHTML = '<span>+</span><span>New page</span>';
+      newBtn.addEventListener('click', () => addPipelineCard(col.key));
+      colEl.appendChild(newBtn);
+
+      board.appendChild(colEl);
+    });
+  }
+
+  function addPipelineCard(column) {
+    pushHistory();
+    state.pipeline.push({ id: Date.now(), title: 'Untitled', column });
+    saveState();
+    renderPipeline();
+    const board = document.getElementById('pipeline-board');
+    const colIdx = PIPELINE_COLS.findIndex(c => c.key === column);
+    const cols = board.querySelectorAll('.pipeline-col');
+    if (cols[colIdx]) {
+      const inputs = cols[colIdx].querySelectorAll('.pipeline-card-title');
+      if (inputs.length) inputs[inputs.length - 1].select();
+    }
+  }
+
+  document.getElementById('pipeline-new-btn').addEventListener('click', () => addPipelineCard('not-started'));
+  document.getElementById('pipeline-new-caret').addEventListener('click', () => addPipelineCard('not-started'));
 
   // ---- settings: user management ----
   function renderUserList() {
