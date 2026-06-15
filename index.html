@@ -2237,6 +2237,43 @@
     saveState();
   }
 
+  if (!state.pipelineSeededV2) {
+    const updates = [
+      { title: 'Maurice Palazzolo',    email: 'mozz81@hotmail.com',                    phone: '61499333053',  firstCallDate: '2026-06-04' },
+      { title: 'Leon Potter',          email: 'leon@leonpotter.com',                   phone: '421747067',    firstCallDate: '2026-06-05' },
+      { title: 'Dylan Grubb',          email: 'sandfordelectrical@outlook.com',        phone: '400132725',    firstCallDate: '2026-06-07' },
+      { title: 'Mike Fernandez',       email: 'acquireinvestments112@gmail.com',       phone: '433772368',    firstCallDate: '2026-06-07' },
+      { title: 'Ali Ali',              email: 'eliteglossdetailers@hotmail.com',       phone: '428259463',    firstCallDate: '2026-06-08' },
+      { title: 'Haris Medzic',         email: 'harism@notracestumpremoval.com',        phone: '61435767760',  firstCallDate: '2026-06-08' },
+      { title: 'Jody Day',             email: 'elysianskulptandbidy@gmail.com',        phone: '0424 741 008', firstCallDate: '2026-06-08' },
+      { title: 'Kabindra shakya',      email: 'Krutoinibak@gmail.com',                phone: '426223625',    firstCallDate: '2026-06-08' },
+      { title: 'Chay',                 email: 'chaitanya7391@gmail.com',               phone: '449089991',    firstCallDate: '2026-06-08' },
+      { title: 'Robert',               email: 'robert@lifetimedynamics.com',           phone: '414756593',    firstCallDate: '2026-06-08' },
+      { title: 'Mlichael Wilson',      email: 'michael.wilson@yong.com.au',            phone: '435402602',    firstCallDate: '2026-06-09' },
+      { title: 'Ayaz Mohammed',        email: 'ayaz.mohammed@zeinet.digital',          phone: '431318851',    firstCallDate: '2026-06-09' },
+      { title: 'Frank Turcino',        email: 'frankjt64@hotmail.com',                 phone: '435059764',    firstCallDate: '2026-06-10' },
+      { title: 'Saphira Thomsen Grant',email: 'saphirathomsengrant@gmail.com',         phone: '447840616',    firstCallDate: '2026-06-10' },
+      { title: 'Leah Gallin',          email: 'leah@soundlabmusic.com.au',             phone: '',             firstCallDate: '2026-06-11' },
+      { title: 'Andrew Jax',           email: 'andrew@6packdad.net',                   phone: '0423 087 011', firstCallDate: '2026-06-11' },
+      { title: 'Abhay',                email: 'abhaykapoor14@gmail.com',               phone: '410150415',    firstCallDate: '2026-06-12' },
+      { title: 'Jason Green',          email: 'jason.green@yless4u.com.au',            phone: '61417295660',  firstCallDate: '2026-06-12' },
+      { title: 'Rhaksha',              email: 'rhaksha@genexmarketing.au',             phone: '433131114',    firstCallDate: '2026-06-12' },
+      { title: 'Zad Hossain',          email: 'zad.h055ai9@gmail.com',                phone: '61490324244',  firstCallDate: '2026-06-13' },
+      { title: 'John',                 email: 'ifno@lawntitanslandscaping.com',        phone: '413548452',    firstCallDate: '2026-06-13' },
+      { title: 'Suleiman Ali',         email: 'sulieman302@gmail.com',                 phone: '432115549',    firstCallDate: '2026-06-15' }
+    ];
+    updates.forEach(u => {
+      const card = state.pipeline.find(c => c.title === u.title);
+      if (card) {
+        card.email = u.email;
+        card.phone = u.phone;
+        card.firstCallDate = u.firstCallDate;
+      }
+    });
+    state.pipelineSeededV2 = true;
+    saveState();
+  }
+
   render();
   if (isLoggedIn()) {
     showDashboard();
