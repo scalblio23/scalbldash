@@ -699,6 +699,27 @@
   .pipeline-card-notes:hover { border-color: #2a2a2a; }
   .pipeline-card-notes:focus { border-color: #444444; color: #d5d5d5; }
   .pipeline-card-notes::placeholder { color: #3a3a3a; }
+  .pipeline-card-field-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pipeline-card-field-lbl { font-size: 10px; color: #555555; letter-spacing: 0.5px; flex-shrink: 0; width: 36px; }
+  .pipeline-card-field-inp {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: #888888;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 0;
+    outline: none;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .pipeline-card-field-inp:hover { border-color: #2a2a2a; }
+  .pipeline-card-field-inp:focus { border-color: #444444; color: #d5d5d5; }
+  .pipeline-card-field-inp::placeholder { color: #3a3a3a; }
   .pipeline-add-status-field-btn {
     background: none;
     border: 1px dashed #2a2a2a;
@@ -1821,6 +1842,35 @@
         dateRow.appendChild(dateText);
         dateRow.appendChild(dateInp);
         metaEl.appendChild(dateRow);
+
+        // Phone & Email
+        [
+          { label: 'Phone', key: 'phone', type: 'tel',   placeholder: 'Add phone…' },
+          { label: 'Email', key: 'email', type: 'email', placeholder: 'Add email…' }
+        ].forEach(({ label, key, type, placeholder }) => {
+          const row = document.createElement('div');
+          row.className = 'pipeline-card-field-row';
+          const lbl = document.createElement('span');
+          lbl.className = 'pipeline-card-field-lbl';
+          lbl.textContent = label;
+          const inp = document.createElement('input');
+          inp.type = type;
+          inp.className = 'pipeline-card-field-inp';
+          inp.placeholder = placeholder;
+          inp.value = card[key] || '';
+          inp.addEventListener('blur', () => {
+            const val = inp.value.trim();
+            if (val === (card[key] || '')) return;
+            pushHistory();
+            const idx = state.pipeline.findIndex(c => c.id === card.id);
+            if (idx !== -1) state.pipeline[idx][key] = val;
+            saveState();
+          });
+          inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+          row.appendChild(lbl);
+          row.appendChild(inp);
+          metaEl.appendChild(row);
+        });
 
         // Notes
         const notesEl = document.createElement('textarea');
