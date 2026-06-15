@@ -369,6 +369,27 @@
   .subtask-row:hover td { background: #0c0c0c; }
   .subtask-indent { color: #2a2a2a; margin-right: 8px; font-size: 13px; }
 
+  /* ---- pipeline stats bar ---- */
+  .pipeline-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .pipeline-stat {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 20px;
+    padding: 5px 14px 5px 10px;
+  }
+  .pipeline-stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .pipeline-stat-label { font-size: 12px; color: #888888; }
+  .pipeline-stat-count { font-size: 12px; font-weight: 600; color: #ffffff; }
+  .pipeline-stat-pct { font-size: 11px; color: #555555; }
+
   /* ---- pipeline board ---- */
   .pipeline-toolbar {
     display: flex;
@@ -879,6 +900,7 @@
       <div class="page-header">
         <h1 class="page-title">Pipeline</h1>
       </div>
+      <div class="pipeline-stats" id="pipeline-stats"></div>
       <div class="pipeline-toolbar">
         <span class="pipeline-toolbar-title">Pipeline</span>
         <div class="pipeline-toolbar-actions">
@@ -1732,6 +1754,25 @@
     const board = document.getElementById('pipeline-board');
     if (!board) return;
     board.innerHTML = '';
+
+    // Stats bar
+    const statsEl = document.getElementById('pipeline-stats');
+    if (statsEl) {
+      statsEl.innerHTML = '';
+      const total = state.pipeline.length;
+      PIPELINE_COLS.forEach(col => {
+        const count = state.pipeline.filter(c => c.column === col.key).length;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const stat = document.createElement('div');
+        stat.className = 'pipeline-stat';
+        stat.innerHTML =
+          '<div class="pipeline-stat-dot" style="background:' + col.color + '"></div>' +
+          '<span class="pipeline-stat-label">' + col.label + '</span>' +
+          '<span class="pipeline-stat-count">' + count + '</span>' +
+          '<span class="pipeline-stat-pct">(' + pct + '%)</span>';
+        statsEl.appendChild(stat);
+      });
+    }
     PIPELINE_COLS.forEach(col => {
       const cards = state.pipeline.filter(c => c.column === col.key);
       const colEl = document.createElement('div');
