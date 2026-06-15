@@ -372,23 +372,119 @@
   /* ---- pipeline stats bar ---- */
   .pipeline-stats {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 22px;
   }
   .pipeline-stat {
+    flex: 1;
     display: flex;
-    align-items: center;
-    gap: 7px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
     background: #0a0a0a;
     border: 1px solid #1a1a1a;
-    border-radius: 20px;
-    padding: 5px 14px 5px 10px;
+    border-radius: 10px;
+    padding: 14px 16px;
   }
-  .pipeline-stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .pipeline-stat-label { font-size: 12px; color: #888888; }
-  .pipeline-stat-count { font-size: 12px; font-weight: 600; color: #ffffff; }
+  .pipeline-stat-top { display: flex; align-items: center; gap: 7px; }
+  .pipeline-stat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .pipeline-stat-label { font-size: 12px; color: #777777; }
+  .pipeline-stat-count { font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1; }
   .pipeline-stat-pct { font-size: 11px; color: #555555; }
+
+  /* ---- pipeline search ---- */
+  .pipeline-search-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+  .pipeline-search-wrap { position: relative; width: 280px; flex-shrink: 0; }
+  .pipeline-search-inp {
+    width: 100%;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 7px;
+    color: #d5d5d5;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 12px 8px 34px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .pipeline-search-inp:focus { border-color: #444444; }
+  .pipeline-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555555;
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .pipeline-search-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .pipeline-search-dropdown.hidden { display: none; }
+  .pipeline-search-pending {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #1a2035;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .pipeline-search-pending-name { font-size: 13px; color: #ffffff; font-weight: 500; }
+  .pipeline-search-apply-btn {
+    background: #2563eb;
+    border: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .pipeline-search-apply-btn:hover { background: #1d4ed8; }
+  .pipeline-search-result {
+    padding: 9px 12px;
+    font-size: 13px;
+    color: #aaaaaa;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .pipeline-search-result:last-child { border-bottom: none; }
+  .pipeline-search-result:hover { background: #1a1a1a; color: #ffffff; }
+  .pipeline-search-result.selected { color: #60a5fa; background: #111827; }
+  .pipeline-search-no-results { padding: 10px 12px; font-size: 12px; color: #555555; }
+  .pipeline-filter-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; padding-top: 4px; }
+  .pipeline-filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #1a2035;
+    border: 1px solid #2563eb44;
+    border-radius: 20px;
+    padding: 5px 10px 5px 12px;
+    font-size: 12px;
+    color: #93c5fd;
+  }
+  .pipeline-filter-chip-x {
+    cursor: pointer;
+    color: #555555;
+    font-size: 14px;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+  .pipeline-filter-chip-x:hover { color: #f87171; }
 
   /* ---- pipeline board ---- */
   .pipeline-toolbar {
@@ -901,6 +997,14 @@
         <h1 class="page-title">Pipeline</h1>
       </div>
       <div class="pipeline-stats" id="pipeline-stats"></div>
+      <div class="pipeline-search-row">
+        <div class="pipeline-search-wrap">
+          <span class="pipeline-search-icon">&#9906;</span>
+          <input class="pipeline-search-inp" id="pipeline-search-inp" placeholder="Search leads…" autocomplete="off">
+          <div class="pipeline-search-dropdown hidden" id="pipeline-search-dd"></div>
+        </div>
+        <div class="pipeline-filter-chips" id="pipeline-filter-chips"></div>
+      </div>
       <div class="pipeline-toolbar">
         <span class="pipeline-toolbar-title">Pipeline</span>
         <div class="pipeline-toolbar-actions">
@@ -1105,7 +1209,7 @@
     if (name === 'settings') renderUserList();
     if (name === 'client-status') renderClientStatus();
     if (name === 'task-list') renderTasks();
-    if (name === 'pipeline') renderPipeline();
+    if (name === 'pipeline') { renderPipeline(); psInitSearch(); }
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
@@ -1740,6 +1844,121 @@
     { key: 'no-show',   label: 'No Show',   color: '#f97316' }
   ];
 
+  // ---- pipeline filters + search ----
+  let psFilters = [];
+  let psSearchPending = null;
+
+  function psGetFilters() { return psFilters; }
+
+  function psAddFilter(name) {
+    if (!psFilters.includes(name)) psFilters.push(name);
+    psRenderChips();
+    renderPipeline();
+  }
+
+  function psRemoveFilter(name) {
+    psFilters = psFilters.filter(f => f !== name);
+    psRenderChips();
+    renderPipeline();
+  }
+
+  function psRenderChips() {
+    const el = document.getElementById('pipeline-filter-chips');
+    if (!el) return;
+    el.innerHTML = '';
+    psFilters.forEach(name => {
+      const chip = document.createElement('div');
+      chip.className = 'pipeline-filter-chip';
+      chip.innerHTML = '<span>' + name + '</span>';
+      const x = document.createElement('span');
+      x.className = 'pipeline-filter-chip-x';
+      x.textContent = '×';
+      x.addEventListener('click', () => psRemoveFilter(name));
+      chip.appendChild(x);
+      el.appendChild(chip);
+    });
+  }
+
+  function psInitSearch() {
+    const inp = document.getElementById('pipeline-search-inp');
+    const dd = document.getElementById('pipeline-search-dd');
+    if (!inp || !dd) return;
+
+    inp.addEventListener('input', () => {
+      const q = inp.value.trim().toLowerCase();
+      dd.innerHTML = '';
+      psSearchPending = null;
+
+      if (!q) { dd.classList.add('hidden'); return; }
+
+      const matches = state.pipeline.filter(c => c.title.toLowerCase().includes(q));
+      if (matches.length === 0) {
+        dd.innerHTML = '<div class="pipeline-search-no-results">No results</div>';
+        dd.classList.remove('hidden');
+        return;
+      }
+
+      matches.slice(0, 8).forEach(card => {
+        const item = document.createElement('div');
+        item.className = 'pipeline-search-result';
+        item.textContent = card.title;
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          psSearchPending = card.title;
+          renderDropdown(q, matches);
+        });
+        dd.appendChild(item);
+      });
+      dd.classList.remove('hidden');
+    });
+
+    function renderDropdown(q, matches) {
+      dd.innerHTML = '';
+
+      if (psSearchPending) {
+        const pending = document.createElement('div');
+        pending.className = 'pipeline-search-pending';
+        const pname = document.createElement('span');
+        pname.className = 'pipeline-search-pending-name';
+        pname.textContent = psSearchPending;
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'pipeline-search-apply-btn';
+        applyBtn.textContent = 'Apply filter';
+        applyBtn.addEventListener('mousedown', e => {
+          e.preventDefault();
+          psAddFilter(psSearchPending);
+          psSearchPending = null;
+          inp.value = '';
+          dd.classList.add('hidden');
+        });
+        pending.appendChild(pname);
+        pending.appendChild(applyBtn);
+        dd.appendChild(pending);
+      }
+
+      matches.slice(0, 8).forEach(card => {
+        const item = document.createElement('div');
+        item.className = 'pipeline-search-result' + (card.title === psSearchPending ? ' selected' : '');
+        item.textContent = card.title;
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          psSearchPending = card.title;
+          renderDropdown(q, matches);
+        });
+        dd.appendChild(item);
+      });
+
+      dd.classList.remove('hidden');
+    }
+
+    inp.addEventListener('blur', () => {
+      setTimeout(() => { dd.classList.add('hidden'); psSearchPending = null; }, 150);
+    });
+    inp.addEventListener('focus', () => {
+      if (inp.value.trim()) inp.dispatchEvent(new Event('input'));
+    });
+  }
+
   // drag state
   let psDraggingId = null;
 
@@ -1766,15 +1985,23 @@
         const stat = document.createElement('div');
         stat.className = 'pipeline-stat';
         stat.innerHTML =
-          '<div class="pipeline-stat-dot" style="background:' + col.color + '"></div>' +
-          '<span class="pipeline-stat-label">' + col.label + '</span>' +
-          '<span class="pipeline-stat-count">' + count + '</span>' +
-          '<span class="pipeline-stat-pct">(' + pct + '%)</span>';
+          '<div class="pipeline-stat-top">' +
+            '<div class="pipeline-stat-dot" style="background:' + col.color + '"></div>' +
+            '<span class="pipeline-stat-label">' + col.label + '</span>' +
+          '</div>' +
+          '<div class="pipeline-stat-count">' + count + '</div>' +
+          '<div class="pipeline-stat-pct">' + pct + '%</div>';
         statsEl.appendChild(stat);
       });
     }
+
+    // Apply active filters
+    const activeFilters = psGetFilters();
+    const visibleIds = activeFilters.length > 0
+      ? new Set(state.pipeline.filter(c => activeFilters.some(f => c.title.toLowerCase().includes(f.toLowerCase()))).map(c => c.id))
+      : null;
     PIPELINE_COLS.forEach(col => {
-      const cards = state.pipeline.filter(c => c.column === col.key);
+      const cards = state.pipeline.filter(c => c.column === col.key && (!visibleIds || visibleIds.has(c.id)));
       const colEl = document.createElement('div');
       colEl.className = 'pipeline-col';
 
