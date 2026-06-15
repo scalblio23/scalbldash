@@ -478,6 +478,190 @@
     user-select: none;
   }
   .pipeline-new-card:hover { color: #888888; background: #111111; }
+
+  /* ---- pipeline status selectors ---- */
+  .pipeline-card-statuses { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .pipeline-status-badge {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    text-align: center;
+    color: #ffffff;
+    transition: filter 0.1s;
+  }
+  .pipeline-status-badge:hover { filter: brightness(1.12); }
+  .pipeline-status-badge.ps-empty { background: #2a2a2a; color: #555555; }
+  .pipeline-status-dropdown {
+    position: fixed;
+    background: #1c1c1e;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    padding: 6px 0;
+    z-index: 9999;
+    min-width: 200px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+  .pipeline-sd-header {
+    font-size: 10px;
+    color: #666666;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 14px 10px;
+  }
+  .pipeline-sd-option {
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .pipeline-sd-option:hover { background: rgba(255,255,255,0.04); }
+  .pipeline-sd-option-bar {
+    width: 100%;
+    padding: 7px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: center;
+  }
+  .pipeline-sd-option-bar.ps-empty-bar { background: #2a2a2a; color: #555555; }
+  .pipeline-sd-divider { height: 1px; background: #222222; margin: 6px 0; }
+  .pipeline-sd-edit {
+    font-size: 12px;
+    color: #777777;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .pipeline-sd-edit:hover { color: #ffffff; }
+
+  /* status field modal */
+  .ps-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ps-modal-overlay.hidden { display: none; }
+  .ps-modal {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 24px;
+    width: 400px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .ps-modal-title { font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 18px; }
+  .ps-modal-lbl { font-size: 11px; color: #666666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .ps-modal-inp {
+    width: 100%;
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    margin-bottom: 16px;
+  }
+  .ps-modal-inp:focus { border-color: #444444; }
+  .ps-options-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .ps-option-row { display: flex; align-items: center; gap: 8px; }
+  .ps-color-pick {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid #2a2a2a;
+    cursor: pointer;
+    padding: 2px;
+    background: #0d0d0d;
+    flex-shrink: 0;
+  }
+  .ps-option-inp {
+    flex: 1;
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-radius: 5px;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+  }
+  .ps-option-inp:focus { border-color: #444444; }
+  .ps-option-del { color: #333333; cursor: pointer; font-size: 18px; flex-shrink: 0; transition: color 0.1s; }
+  .ps-option-del:hover { color: #f87171; }
+  .ps-add-option-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    color: #579bfc;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-bottom: 18px;
+  }
+  .ps-add-option-btn:hover { color: #7ab5ff; }
+  .ps-modal-footer { display: flex; align-items: center; gap: 8px; }
+  .ps-modal-save {
+    background: #2563eb;
+    border: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .ps-modal-save:hover { background: #1d4ed8; }
+  .ps-modal-cancel {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #aaaaaa;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .ps-modal-cancel:hover { color: #ffffff; }
+  .ps-modal-delete {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #f87171;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .ps-modal-delete:hover { text-decoration: underline; }
+  .pipeline-add-status-field-btn {
+    background: none;
+    border: 1px dashed #2a2a2a;
+    border-radius: 6px;
+    color: #555555;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 8px 14px;
+    margin-top: 16px;
+    transition: border-color 0.15s, color 0.15s;
+    display: block;
+  }
+  .pipeline-add-status-field-btn:hover { border-color: #444444; color: #aaaaaa; }
 </style>
 </head>
 <body>
@@ -630,6 +814,24 @@
         </div>
       </div>
       <div class="pipeline-board" id="pipeline-board"></div>
+      <button class="pipeline-add-status-field-btn" id="pipeline-add-status-btn">+ Add Status Column</button>
+    </div>
+
+    <!-- Pipeline status field modal -->
+    <div class="ps-modal-overlay hidden" id="ps-modal-overlay">
+      <div class="ps-modal">
+        <div class="ps-modal-title" id="ps-modal-title">Add Status Column</div>
+        <div class="ps-modal-lbl">Column Label</div>
+        <input class="ps-modal-inp" id="ps-modal-field-label" placeholder="e.g. Decision Maker">
+        <div class="ps-modal-lbl">Options</div>
+        <div class="ps-options-list" id="ps-options-list"></div>
+        <button class="ps-add-option-btn" id="ps-add-option-btn">+ Add option</button>
+        <div class="ps-modal-footer">
+          <button class="ps-modal-save" id="ps-modal-save">Save</button>
+          <button class="ps-modal-cancel" id="ps-modal-cancel">Cancel</button>
+          <button class="ps-modal-delete hidden" id="ps-modal-delete">Delete column</button>
+        </div>
+      </div>
     </div>
 
     <div class="page" id="page-settings">
@@ -683,7 +885,8 @@
     ],
     clients: [],
     tasks: [],
-    pipeline: []
+    pipeline: [],
+    pipelineStatusFields: []
   };
 
   function loadState() {
@@ -695,6 +898,7 @@
           state = saved;
           if (!state.tasks) state.tasks = [];
           if (!state.pipeline) state.pipeline = [];
+          if (!state.pipelineStatusFields) state.pipelineStatusFields = [];
         }
       }
     } catch (e) {}
@@ -1429,6 +1633,13 @@
     { key: 'lost',      label: 'Lost',      color: '#f87171' }
   ];
 
+  // active dropdown reference
+  let psActiveDropdown = null;
+  function psCloseDropdown() {
+    if (psActiveDropdown) { psActiveDropdown.remove(); psActiveDropdown = null; }
+  }
+  document.addEventListener('click', psCloseDropdown);
+
   function renderPipeline() {
     const board = document.getElementById('pipeline-board');
     if (!board) return;
@@ -1459,6 +1670,7 @@
       cards.forEach(card => {
         const cardEl = document.createElement('div');
         cardEl.className = 'pipeline-card';
+
         const titleInp = document.createElement('input');
         titleInp.type = 'text';
         titleInp.className = 'pipeline-card-title';
@@ -1473,6 +1685,7 @@
           saveState();
         });
         titleInp.addEventListener('keydown', e => { if (e.key === 'Enter') titleInp.blur(); });
+
         const delBtn = document.createElement('span');
         delBtn.className = 'pipeline-card-del';
         delBtn.textContent = '×';
@@ -1482,8 +1695,30 @@
           saveState();
           renderPipeline();
         });
+
         cardEl.appendChild(titleInp);
         cardEl.appendChild(delBtn);
+
+        // Status field badges
+        if (state.pipelineStatusFields.length > 0) {
+          const statusesEl = document.createElement('div');
+          statusesEl.className = 'pipeline-card-statuses';
+          state.pipelineStatusFields.forEach(field => {
+            const selectedLabel = (card.statuses || {})[field.id];
+            const selectedOpt = field.options.find(o => o.label === selectedLabel);
+            const badge = document.createElement('button');
+            badge.className = 'pipeline-status-badge' + (selectedOpt ? '' : ' ps-empty');
+            badge.textContent = selectedOpt ? selectedOpt.label : field.label;
+            if (selectedOpt) badge.style.background = selectedOpt.color;
+            badge.addEventListener('click', e => {
+              e.stopPropagation();
+              psOpenDropdown(badge, card, field);
+            });
+            statusesEl.appendChild(badge);
+          });
+          cardEl.appendChild(statusesEl);
+        }
+
         cardsEl.appendChild(cardEl);
       });
       colEl.appendChild(cardsEl);
@@ -1498,9 +1733,176 @@
     });
   }
 
+  function psOpenDropdown(badge, card, field) {
+    psCloseDropdown();
+    const rect = badge.getBoundingClientRect();
+    const dd = document.createElement('div');
+    dd.className = 'pipeline-status-dropdown';
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    dd.style.minWidth = rect.width + 'px';
+    dd.addEventListener('click', e => e.stopPropagation());
+
+    const hdr = document.createElement('div');
+    hdr.className = 'pipeline-sd-header';
+    hdr.textContent = field.label;
+    dd.appendChild(hdr);
+
+    // Empty option
+    const emptyOpt = document.createElement('div');
+    emptyOpt.className = 'pipeline-sd-option';
+    const emptyBar = document.createElement('div');
+    emptyBar.className = 'pipeline-sd-option-bar ps-empty-bar';
+    emptyBar.textContent = 'Empty';
+    emptyOpt.appendChild(emptyBar);
+    emptyOpt.addEventListener('click', () => {
+      pushHistory();
+      const idx = state.pipeline.findIndex(c => c.id === card.id);
+      if (idx !== -1) {
+        if (!state.pipeline[idx].statuses) state.pipeline[idx].statuses = {};
+        delete state.pipeline[idx].statuses[field.id];
+      }
+      saveState(); renderPipeline(); psCloseDropdown();
+    });
+    dd.appendChild(emptyOpt);
+
+    field.options.forEach(opt => {
+      const optEl = document.createElement('div');
+      optEl.className = 'pipeline-sd-option';
+      const bar = document.createElement('div');
+      bar.className = 'pipeline-sd-option-bar';
+      bar.style.background = opt.color;
+      bar.textContent = opt.label;
+      optEl.appendChild(bar);
+      optEl.addEventListener('click', () => {
+        pushHistory();
+        const idx = state.pipeline.findIndex(c => c.id === card.id);
+        if (idx !== -1) {
+          if (!state.pipeline[idx].statuses) state.pipeline[idx].statuses = {};
+          state.pipeline[idx].statuses[field.id] = opt.label;
+        }
+        saveState(); renderPipeline(); psCloseDropdown();
+      });
+      dd.appendChild(optEl);
+    });
+
+    const div = document.createElement('div');
+    div.className = 'pipeline-sd-divider';
+    dd.appendChild(div);
+
+    const editLink = document.createElement('div');
+    editLink.className = 'pipeline-sd-edit';
+    editLink.textContent = '✎ Edit Labels';
+    editLink.addEventListener('click', () => { psCloseDropdown(); psOpenModal(field.id); });
+    dd.appendChild(editLink);
+
+    document.body.appendChild(dd);
+    psActiveDropdown = dd;
+
+    // Reposition if off-screen
+    const dr = dd.getBoundingClientRect();
+    if (dr.right > window.innerWidth) dd.style.left = (window.innerWidth - dr.width - 8) + 'px';
+    if (dr.bottom > window.innerHeight) dd.style.top = (rect.top - dr.height - 4) + 'px';
+  }
+
+  // ---- status field modal ----
+  let psEditingFieldId = null;
+  let psModalOptions = [];
+
+  function psOpenModal(fieldId) {
+    psEditingFieldId = fieldId || null;
+    const field = fieldId ? state.pipelineStatusFields.find(f => f.id === fieldId) : null;
+    psModalOptions = field ? field.options.map(o => Object.assign({}, o)) : [
+      { label: 'Done', color: '#00c875' },
+      { label: 'Working on it', color: '#fdab3d' },
+      { label: 'Stuck', color: '#e2445c' }
+    ];
+    document.getElementById('ps-modal-title').textContent = field ? 'Edit Status Column' : 'Add Status Column';
+    document.getElementById('ps-modal-field-label').value = field ? field.label : '';
+    document.getElementById('ps-modal-delete').classList.toggle('hidden', !field);
+    psRenderModalOptions();
+    document.getElementById('ps-modal-overlay').classList.remove('hidden');
+  }
+
+  function psRenderModalOptions() {
+    const list = document.getElementById('ps-options-list');
+    list.innerHTML = '';
+    psModalOptions.forEach((opt, i) => {
+      const row = document.createElement('div');
+      row.className = 'ps-option-row';
+
+      const colorPick = document.createElement('input');
+      colorPick.type = 'color';
+      colorPick.className = 'ps-color-pick';
+      colorPick.value = opt.color;
+      colorPick.style.background = opt.color;
+      colorPick.addEventListener('input', () => {
+        psModalOptions[i].color = colorPick.value;
+        colorPick.style.background = colorPick.value;
+      });
+
+      const labelInp = document.createElement('input');
+      labelInp.type = 'text';
+      labelInp.className = 'ps-option-inp';
+      labelInp.value = opt.label;
+      labelInp.placeholder = 'Option label';
+      labelInp.addEventListener('input', () => { psModalOptions[i].label = labelInp.value; });
+
+      const del = document.createElement('span');
+      del.className = 'ps-option-del';
+      del.textContent = '×';
+      del.addEventListener('click', () => { psModalOptions.splice(i, 1); psRenderModalOptions(); });
+
+      row.appendChild(colorPick);
+      row.appendChild(labelInp);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function psCloseModal() {
+    document.getElementById('ps-modal-overlay').classList.add('hidden');
+    psEditingFieldId = null;
+    psModalOptions = [];
+  }
+
+  document.getElementById('ps-modal-cancel').addEventListener('click', psCloseModal);
+  document.getElementById('ps-modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) psCloseModal(); });
+
+  document.getElementById('ps-add-option-btn').addEventListener('click', () => {
+    psModalOptions.push({ label: '', color: '#579bfc' });
+    psRenderModalOptions();
+    const inputs = document.querySelectorAll('.ps-option-inp');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+
+  document.getElementById('ps-modal-save').addEventListener('click', () => {
+    const label = document.getElementById('ps-modal-field-label').value.trim();
+    if (!label) { document.getElementById('ps-modal-field-label').focus(); return; }
+    const opts = psModalOptions.filter(o => o.label.trim());
+    pushHistory();
+    if (psEditingFieldId) {
+      const idx = state.pipelineStatusFields.findIndex(f => f.id === psEditingFieldId);
+      if (idx !== -1) { state.pipelineStatusFields[idx].label = label; state.pipelineStatusFields[idx].options = opts; }
+    } else {
+      state.pipelineStatusFields.push({ id: Date.now(), label, options: opts });
+    }
+    saveState(); renderPipeline(); psCloseModal();
+  });
+
+  document.getElementById('ps-modal-delete').addEventListener('click', () => {
+    if (!psEditingFieldId) return;
+    pushHistory();
+    state.pipelineStatusFields = state.pipelineStatusFields.filter(f => f.id !== psEditingFieldId);
+    state.pipeline.forEach(c => { if (c.statuses) delete c.statuses[psEditingFieldId]; });
+    saveState(); renderPipeline(); psCloseModal();
+  });
+
+  document.getElementById('pipeline-add-status-btn').addEventListener('click', () => psOpenModal(null));
+
   function addPipelineCard(column) {
     pushHistory();
-    state.pipeline.push({ id: Date.now(), title: 'Untitled', column });
+    state.pipeline.push({ id: Date.now(), title: 'Untitled', column, statuses: {} });
     saveState();
     renderPipeline();
     const board = document.getElementById('pipeline-board');
@@ -1512,8 +1914,8 @@
     }
   }
 
-  document.getElementById('pipeline-new-btn').addEventListener('click', () => addPipelineCard('not-started'));
-  document.getElementById('pipeline-new-caret').addEventListener('click', () => addPipelineCard('not-started'));
+  document.getElementById('pipeline-new-btn').addEventListener('click', () => addPipelineCard('new'));
+  document.getElementById('pipeline-new-caret').addEventListener('click', () => addPipelineCard('new'));
 
   // ---- settings: user management ----
   function renderUserList() {
