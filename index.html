@@ -2168,7 +2168,7 @@
   // ---- init ----
   loadState();
 
-  if (state.pipeline.length === 0) {
+  if (!state.pipelineSeededV1) {
     const seed = [
       'Maurice Palazzolo','Leon Potter','Dylan Grubb','Mike Fernandez',
       'Ali Ali','Haris Medzic','Jody Day','Kabindra shakya',
@@ -2180,6 +2180,7 @@
     seed.forEach((name, i) => {
       state.pipeline.push({ id: Date.now() + i, title: name, column: 'new', statuses: {} });
     });
+    state.pipelineSeededV1 = true;
     saveState();
   }
 
