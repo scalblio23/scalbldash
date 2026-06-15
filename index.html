@@ -1423,9 +1423,10 @@
 
   // ---- pipeline board ----
   const PIPELINE_COLS = [
-    { key: 'not-started', label: 'Not started', color: '#888888' },
-    { key: 'in-progress', label: 'In progress', color: '#60a5fa' },
-    { key: 'done',        label: 'Done',         color: '#4ade80' }
+    { key: 'new',       label: 'New',       color: '#60a5fa' },
+    { key: 'call-had',  label: 'Call Had',  color: '#f5b73d' },
+    { key: 'closed',    label: 'Closed',    color: '#4ade80' },
+    { key: 'lost',      label: 'Lost',      color: '#f87171' }
   ];
 
   function renderPipeline() {
