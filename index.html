@@ -480,24 +480,28 @@
   .pipeline-new-card:hover { color: #888888; background: #111111; }
 
   /* ---- pipeline status selectors ---- */
-  .pipeline-card-statuses { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+  .pipeline-card-statuses { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
   .pipeline-status-badge {
-    display: block;
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 4px;
+    display: inline-block;
+    width: 11%;
+    min-width: 28px;
+    padding: 4px 0;
+    border-radius: 3px;
     border: none;
     font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
     cursor: pointer;
     text-align: center;
     color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: filter 0.1s;
   }
-  .pipeline-status-badge:hover { filter: brightness(1.12); }
-  .pipeline-status-badge.ps-empty { background: #2a2a2a; color: #555555; }
+  .pipeline-status-badge:hover { filter: brightness(1.15); }
+  .pipeline-status-badge.ps-empty { background: #222222; color: #444444; }
   .pipeline-status-dropdown {
     position: fixed;
     background: #1c1c1e;
