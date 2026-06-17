@@ -368,6 +368,34 @@
   .subtask-row td { background: #060606; border-bottom: 1px solid #0f0f0f; }
   .subtask-row:hover td { background: #0c0c0c; }
   .subtask-indent { color: #2a2a2a; margin-right: 8px; font-size: 13px; }
+  /* ---- Kanban ---- */
+  .kanban-board { display: flex; gap: 16px; align-items: flex-start; min-height: 400px; }
+  .kanban-col {
+    flex: 1; min-width: 200px; background: #0a0a0a;
+    border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .kanban-col.kanban-drop-target { border-color: #333; background: #101010; }
+  .kanban-col-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; padding: 0 2px;
+  }
+  .kanban-col-title { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .kanban-col-count { font-size: 11px; color: #555; background: #1a1a1a; border-radius: 10px; padding: 2px 8px; }
+  .kanban-card {
+    background: #111; border: 1px solid #1e1e1e; border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 8px;
+    cursor: grab; transition: border-color 0.15s, background 0.15s; user-select: none;
+  }
+  .kanban-card:last-child { margin-bottom: 0; }
+  .kanban-card:hover { border-color: #2a2a2a; background: #161616; }
+  .kanban-card.dragging { opacity: 0.35; cursor: grabbing; }
+  .kanban-card-title { font-size: 13px; color: #e5e5e5; line-height: 1.4; }
+  .kanban-card-title.has-meta { margin-bottom: 8px; }
+  .kanban-card-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .kanban-card-client { font-size: 11px; color: #888; background: #1a1a1a; border-radius: 4px; padding: 2px 7px; }
+  .kanban-card-due { font-size: 11px; color: #666; }
+  .kanban-card-due.overdue { color: #dc2626; }
 </style>
 </head>
 <body>
@@ -388,6 +416,7 @@
       <div class="nav-item active" data-page="clients">Client List</div>
       <div class="nav-item" data-page="client-status">Client Status</div>
       <div class="nav-item" data-page="task-list">Task List</div>
+      <div class="nav-item" data-page="kanban">Kanban</div>
       <div class="nav-item" data-page="settings">Settings</div>
     </nav>
     <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
@@ -495,6 +524,17 @@
         </tbody>
         <tbody id="task-rows"></tbody>
       </table>
+    </div>
+
+    <!-- Kanban page -->
+    <div class="page" id="page-kanban">
+      <div class="page-header">
+        <h1 class="page-title">Kanban</h1>
+        <div class="header-actions">
+          <button class="btn" id="kanban-add-task-btn">+ Add Task</button>
+        </div>
+      </div>
+      <div class="kanban-board" id="kanban-board"></div>
     </div>
 
     <!-- Settings page -->
@@ -661,6 +701,7 @@
     if (name === 'settings') renderUserList();
     if (name === 'client-status') renderClientStatus();
     if (name === 'task-list') renderTasks();
+    if (name === 'kanban') renderKanban();
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
@@ -1003,6 +1044,110 @@
     });
   }
 
+  // ---- Kanban ----
+  let kanbanDragIdx = null;
+
+  function renderKanban() {
+    const board = document.getElementById('kanban-board');
+    if (!board) return;
+    board.innerHTML = '';
+
+    const COLS = [
+      { status: 'To Do',       color: '#1d4ed8' },
+      { status: 'In Progress', color: '#f97316' },
+      { status: 'Done',        color: '#16a34a' }
+    ];
+
+    COLS.forEach(col => {
+      const colTasks = state.tasks
+        .map((t, i) => ({ t, i }))
+        .filter(({ t }) => (t.taskStatus || 'To Do') === col.status);
+
+      const colEl = document.createElement('div');
+      colEl.className = 'kanban-col';
+      colEl.dataset.status = col.status;
+
+      // Header
+      const header = document.createElement('div');
+      header.className = 'kanban-col-header';
+      const titleEl = document.createElement('span');
+      titleEl.className = 'kanban-col-title';
+      titleEl.style.color = col.color;
+      titleEl.textContent = col.status;
+      const countEl = document.createElement('span');
+      countEl.className = 'kanban-col-count';
+      countEl.textContent = colTasks.length;
+      header.appendChild(titleEl);
+      header.appendChild(countEl);
+      colEl.appendChild(header);
+
+      // Drop zone
+      colEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        colEl.classList.add('kanban-drop-target');
+      });
+      colEl.addEventListener('dragleave', e => {
+        if (!colEl.contains(e.relatedTarget)) colEl.classList.remove('kanban-drop-target');
+      });
+      colEl.addEventListener('drop', e => {
+        e.preventDefault();
+        colEl.classList.remove('kanban-drop-target');
+        if (kanbanDragIdx === null) return;
+        const newStatus = colEl.dataset.status;
+        if (state.tasks[kanbanDragIdx].taskStatus === newStatus) return;
+        pushHistory();
+        state.tasks[kanbanDragIdx].taskStatus = newStatus;
+        saveState();
+        renderKanban();
+        renderTasks();
+      });
+
+      // Cards
+      colTasks.forEach(({ t, i }) => {
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.draggable = true;
+        card.addEventListener('dragstart', () => {
+          kanbanDragIdx = i;
+          setTimeout(() => card.classList.add('dragging'), 0);
+        });
+        card.addEventListener('dragend', () => {
+          kanbanDragIdx = null;
+          card.classList.remove('dragging');
+        });
+
+        const hasMeta = !!(t.client || t.dateDue);
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'kanban-card-title' + (hasMeta ? ' has-meta' : '');
+        titleDiv.textContent = t.task || 'Untitled';
+        card.appendChild(titleDiv);
+
+        if (hasMeta) {
+          const meta = document.createElement('div');
+          meta.className = 'kanban-card-meta';
+          if (t.client) {
+            const clientSpan = document.createElement('span');
+            clientSpan.className = 'kanban-card-client';
+            clientSpan.textContent = t.client;
+            meta.appendChild(clientSpan);
+          }
+          if (t.dateDue) {
+            const dueSpan = document.createElement('span');
+            dueSpan.className = 'kanban-card-due';
+            if (t.dateDue < todayISO() && col.status !== 'Done') dueSpan.classList.add('overdue');
+            dueSpan.textContent = formatAU(t.dateDue);
+            meta.appendChild(dueSpan);
+          }
+          card.appendChild(meta);
+        }
+
+        colEl.appendChild(card);
+      });
+
+      board.appendChild(colEl);
+    });
+  }
+
   function renderMRRFooter() {
     const footer = document.getElementById('mrr-footer');
     footer.innerHTML = '';
@@ -1111,6 +1256,7 @@
     renderMRRFooter();
     renderClientStatus();
     renderTasks();
+    if (document.getElementById('page-kanban').classList.contains('active')) renderKanban();
     fillStatusOptions(inStatus, inStatus.value || (state.statuses[0] && state.statuses[0].name));
   }
 
@@ -1275,6 +1421,18 @@
     saveState();
     renderTasks();
   }
+
+  // ---- kanban add task shortcut ----
+  document.getElementById('kanban-add-task-btn').addEventListener('click', () => {
+    showPage('task-list');
+    if (!taskAddRow.classList.contains('open')) {
+      taskAddRow.classList.add('open');
+      addTaskBtn.textContent = 'Save';
+      fillClientOptions(tClient, '');
+      tDate.value = todayISO();
+      tTask.focus();
+    }
+  });
 
   // ---- undo wiring ----
   document.getElementById('undo-btn').addEventListener('click', undo);
