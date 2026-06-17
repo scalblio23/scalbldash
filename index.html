@@ -368,6 +368,10 @@
   .subtask-row td { background: #060606; border-bottom: 1px solid #0f0f0f; }
   .subtask-row:hover td { background: #0c0c0c; }
   .subtask-indent { color: #2a2a2a; margin-right: 8px; font-size: 13px; }
+  /* ---- View toggle ---- */
+  .view-toggle { display: flex; gap: 4px; }
+  .view-btn { color: #666; }
+  .view-btn.active { background: #242424; color: #ffffff; }
   /* ---- Kanban ---- */
   .kanban-board { display: flex; gap: 16px; align-items: flex-start; min-height: 400px; }
   .kanban-col {
@@ -416,7 +420,6 @@
       <div class="nav-item active" data-page="clients">Client List</div>
       <div class="nav-item" data-page="client-status">Client Status</div>
       <div class="nav-item" data-page="task-list">Task List</div>
-      <div class="nav-item" data-page="kanban">Kanban</div>
       <div class="nav-item" data-page="settings">Settings</div>
     </nav>
     <button class="logout-btn" id="logout-btn" style="margin-top:auto">Logout</button>
@@ -494,47 +497,45 @@
       <div class="page-header">
         <h1 class="page-title">Task List</h1>
         <div class="header-actions">
+          <div class="view-toggle">
+            <button class="btn view-btn active" id="view-list-btn">List</button>
+            <button class="btn view-btn" id="view-kanban-btn">Kanban</button>
+          </div>
           <button class="btn" id="add-task-btn">+ Add Task</button>
         </div>
       </div>
-      <table class="client-table">
-        <thead>
-          <tr>
-            <th>Task</th>
-            <th>Status</th>
-            <th>Client</th>
-            <th>Date Due</th>
-            <th>Notes</th>
-            <th style="width:30px"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="add-row" id="task-add-row">
-            <td><input id="t-task" placeholder="Task"></td>
-            <td><select id="t-status" class="badge-select ts-todo">
-              <option value="To Do">To Do</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Done">Done</option>
-            </select></td>
-            <td><select id="t-client" style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:4px;color:#e5e5e5;font-family:inherit;font-size:13px;padding:8px 10px;outline:none;"></select></td>
-            <td><input id="t-date" type="date"></td>
-            <td><input id="t-notes" placeholder="Notes"></td>
-            <td></td>
-          </tr>
-        </tbody>
-        <tbody id="task-rows"></tbody>
-      </table>
-    </div>
-
-    <!-- Kanban page -->
-    <div class="page" id="page-kanban">
-      <div class="page-header">
-        <h1 class="page-title">Kanban</h1>
-        <div class="header-actions">
-          <button class="btn" id="kanban-add-task-btn">+ Add Task</button>
-        </div>
+      <div id="task-list-view">
+        <table class="client-table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Status</th>
+              <th>Client</th>
+              <th>Date Due</th>
+              <th>Notes</th>
+              <th style="width:30px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="add-row" id="task-add-row">
+              <td><input id="t-task" placeholder="Task"></td>
+              <td><select id="t-status" class="badge-select ts-todo">
+                <option value="To Do">To Do</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Done">Done</option>
+              </select></td>
+              <td><select id="t-client" style="width:100%;background:#0d0d0d;border:1px solid #222;border-radius:4px;color:#e5e5e5;font-family:inherit;font-size:13px;padding:8px 10px;outline:none;"></select></td>
+              <td><input id="t-date" type="date"></td>
+              <td><input id="t-notes" placeholder="Notes"></td>
+              <td></td>
+            </tr>
+          </tbody>
+          <tbody id="task-rows"></tbody>
+        </table>
       </div>
-      <div class="kanban-board" id="kanban-board"></div>
+      <div id="task-kanban-view" style="display:none">
+        <div class="kanban-board" id="kanban-board"></div>
+      </div>
     </div>
 
     <!-- Settings page -->
@@ -701,7 +702,6 @@
     if (name === 'settings') renderUserList();
     if (name === 'client-status') renderClientStatus();
     if (name === 'task-list') renderTasks();
-    if (name === 'kanban') renderKanban();
   }
 
   navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
@@ -1256,7 +1256,7 @@
     renderMRRFooter();
     renderClientStatus();
     renderTasks();
-    if (document.getElementById('page-kanban').classList.contains('active')) renderKanban();
+    if (document.getElementById('task-kanban-view').style.display !== 'none') renderKanban();
     fillStatusOptions(inStatus, inStatus.value || (state.statuses[0] && state.statuses[0].name));
   }
 
@@ -1422,16 +1422,25 @@
     renderTasks();
   }
 
-  // ---- kanban add task shortcut ----
-  document.getElementById('kanban-add-task-btn').addEventListener('click', () => {
-    showPage('task-list');
-    if (!taskAddRow.classList.contains('open')) {
-      taskAddRow.classList.add('open');
-      addTaskBtn.textContent = 'Save';
-      fillClientOptions(tClient, '');
-      tDate.value = todayISO();
-      tTask.focus();
-    }
+  // ---- view toggle (List / Kanban) ----
+  const taskListView   = document.getElementById('task-list-view');
+  const taskKanbanView = document.getElementById('task-kanban-view');
+  const viewListBtn    = document.getElementById('view-list-btn');
+  const viewKanbanBtn  = document.getElementById('view-kanban-btn');
+
+  viewListBtn.addEventListener('click', () => {
+    taskListView.style.display   = '';
+    taskKanbanView.style.display = 'none';
+    viewListBtn.classList.add('active');
+    viewKanbanBtn.classList.remove('active');
+  });
+
+  viewKanbanBtn.addEventListener('click', () => {
+    taskListView.style.display   = 'none';
+    taskKanbanView.style.display = '';
+    viewKanbanBtn.classList.add('active');
+    viewListBtn.classList.remove('active');
+    renderKanban();
   });
 
   // ---- undo wiring ----
